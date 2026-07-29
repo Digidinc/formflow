@@ -222,11 +222,17 @@ export function Component() {
               affected.
             </p>
 
-            <h2 id="refunds">6. 14-day money-back guarantee</h2>
+            <h2 id="refunds">6. Money-back guarantee (14 days from purchase)</h2>
             <p>
               If FormFlow is not right for you, ask for a refund within{' '}
-              <strong>14 days</strong> of your purchase and we will refund it in full. No
+              <strong>14 days of your purchase date</strong> and we will refund it in full. No
               justification required, though we would genuinely like to hear what went wrong.
+            </p>
+            <p>
+              This refund window is about <strong>billing</strong>. It is a different thing from the
+              offline grace period described in{' '}
+              <a href="#availability">section 8</a>, which is about what happens when our licence
+              service is unreachable. The two are unrelated and do not affect each other.
             </p>
             <p>
               Request a refund through your Freemius customer dashboard, or email{' '}
@@ -269,8 +275,11 @@ export function Component() {
             <ul>
               <li>
                 <strong>If the licence service is unreachable</strong>, Premium Features keep working
-                for a <strong>14-day grace period</strong> measured from the last successful check.
-                An outage on our side does not interrupt you.
+                for an <strong>offline grace period of 14 days</strong>, measured from the last
+                successful check — not from your purchase date. An outage on our side does not
+                interrupt you. This is a technical allowance for downtime; it is not a refund
+                window, and it has no bearing on the money-back guarantee in{' '}
+                <a href="#refunds">section 6</a>.
               </li>
               <li>
                 <strong>If your licence is revoked, cancelled, expired, or refunded</strong>, Premium
