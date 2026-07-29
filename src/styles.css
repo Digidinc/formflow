@@ -1180,32 +1180,39 @@ code {
 /* ----------------------------------------------------------------- */
 /* Pricing                                                           */
 /* ----------------------------------------------------------------- */
-.billing-toggle {
-  display: flex;
-  gap: 4px;
-  width: fit-content;
-  margin: 0 auto 30px;
-  padding: 5px;
+.license-faq {
+  max-width: 760px;
+  margin: 56px auto 0;
+}
+.license-faq h3 {
+  margin: 0 0 20px;
+  text-align: center;
+  font-size: 1.15rem;
+  font-weight: 650;
+  color: var(--ink);
+}
+.license-faq dl {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+.license-faq dl > div {
+  padding: 16px 18px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 12px;
   background: var(--surface);
-  box-shadow: var(--shadow-sm);
 }
-.billing-toggle button {
-  padding: 9px 22px;
-  border: none;
-  border-radius: 999px;
-  background: transparent;
-  font-family: inherit;
-  font-size: 0.92rem;
-  font-weight: 600;
+.license-faq dt {
+  margin: 0 0 6px;
+  font-size: 0.94rem;
+  font-weight: 650;
+  color: var(--ink);
+}
+.license-faq dd {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.6;
   color: var(--ink-2);
-  cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-}
-.billing-toggle button.is-active {
-  background: var(--ink);
-  color: #fff;
 }
 
 .price-grid {
