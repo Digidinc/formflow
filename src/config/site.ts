@@ -5,12 +5,12 @@
  * ------------------------------------------------------------------ */
 
 /** Scheme + host only, no path, no trailing slash. */
-export const SITE_ORIGIN = 'https://hrahimi270.github.io';
+export const SITE_ORIGIN = 'https://digidinc.github.io';
 
 /** Deploy sub-path (matches Vite `base`). Empty string once on a root domain. */
 export const BASE_PATH = '/formflow';
 
-/** Canonical site root, e.g. https://hrahimi270.github.io/formflow */
+/** Canonical site root, e.g. https://digidinc.github.io/formflow */
 export const SITE_URL = `${SITE_ORIGIN}${BASE_PATH}`;
 
 export const SITE_NAME = 'FormFlow';
@@ -19,8 +19,8 @@ export const SITE_DESCRIPTION =
   'Build forms visually in the Strapi v5 admin and render them anywhere with headless ' +
   'React and Vue SDKs, over a clean REST API. Open-core, MIT-licensed free tier.';
 
-export const REPO_URL = 'https://github.com/hrahimi270/strapi-plugin-formflow';
-export const SDK_REPO_URL = 'https://github.com/hrahimi270/formflow-sdk';
+export const REPO_URL = 'https://github.com/Digidinc/strapi-plugin-formflow';
+export const SDK_REPO_URL = 'https://github.com/Digidinc/formflow-sdk';
 export const NPM_URL = 'https://www.npmjs.com/package/@formflowjs/strapi-plugin-formflow';
 
 /** Default social card for non-article pages: the square brand logo

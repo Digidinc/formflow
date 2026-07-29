@@ -17,7 +17,7 @@ const root = join(__dirname, '..');
 const dist = join(root, 'dist');
 const blogDir = join(root, 'src', 'content', 'blog');
 
-const SITE_URL = 'https://hrahimi270.github.io/formflow';
+const SITE_URL = 'https://digidinc.github.io/formflow';
 const today = new Date().toISOString().slice(0, 10);
 
 if (!existsSync(dist)) {
