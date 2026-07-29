@@ -216,7 +216,6 @@ const endpoints = [
   { method: 'GET', path: '/api/formflow/forms/:slug/partial/:token', desc: 'Resume a saved draft' },
 ];
 
-type Billing = 'annual' | 'lifetime';
 type Price = { price: string; note: string };
 
 const pricing: {
@@ -226,9 +225,9 @@ const pricing: {
   features: string[];
   available: boolean;
   cta?: string;
-  // Free is a single flat price; paid tiers switch with the billing toggle.
+  // Free is a single flat price; paid tiers are annual recurring.
   flat?: Price;
-  prices?: Record<Billing, Price>;
+  annual?: Price;
 }[] = [
   {
     tier: 'Free',
@@ -252,10 +251,7 @@ const pricing: {
     badge: 'pro',
     available: false,
     blurb: 'Everything to ship serious forms.',
-    prices: {
-      annual: { price: '$79', note: 'per project · billed yearly' },
-      lifetime: { price: '$249', note: 'per project · one-time' },
-    },
+    annual: { price: '$79', note: 'per project · billed yearly' },
     features: [
       'Everything in Free, plus —',
       'Advanced fields & conditional logic',
@@ -271,10 +267,7 @@ const pricing: {
     badge: 'business',
     available: false,
     blurb: 'For compliance-bound teams.',
-    prices: {
-      annual: { price: '$299', note: 'per project · billed yearly' },
-      lifetime: { price: '$899', note: 'per project · one-time' },
-    },
+    annual: { price: '$299', note: 'per project · billed yearly' },
     features: [
       'Everything in Pro, plus —',
       'GDPR retention & anonymization',
@@ -533,7 +526,6 @@ function FormSpecimen() {
 export function Component() {
   const [activeSdk, setActiveSdk] = useState(1);
   const sdk = sdks[activeSdk];
-  const [billing, setBilling] = useState<Billing>('annual');
 
   return (
     <>
@@ -808,30 +800,9 @@ export function Component() {
             runtime by a license key; remove it and FormFlow keeps capturing submissions as the free tier.
           </p>
         </div>
-        <div className="billing-toggle" role="tablist" aria-label="Billing period">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={billing === 'annual'}
-            className={billing === 'annual' ? 'is-active' : ''}
-            onClick={() => setBilling('annual')}
-          >
-            Annual
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={billing === 'lifetime'}
-            className={billing === 'lifetime' ? 'is-active' : ''}
-            onClick={() => setBilling('lifetime')}
-          >
-            Lifetime
-          </button>
-        </div>
-
         <div className="price-grid">
           {pricing.map((plan) => {
-            const p = plan.prices ? plan.prices[billing] : plan.flat!;
+            const p = plan.annual ?? plan.flat!;
             return (
               <article key={plan.tier} className={`price-card${!plan.available ? ' is-soon' : ''}`}>
                 {plan.available ? null : <span className="price-flag soon">Coming soon</span>}
@@ -868,6 +839,49 @@ export function Component() {
               </article>
             );
           })}
+        </div>
+
+        <div className="license-faq">
+          <h3>How licensing works</h3>
+          <dl>
+            <div>
+              <dt>What counts as a &ldquo;project&rdquo;?</dt>
+              <dd>
+                One license activates one FormFlow installation. Restarts, redeploys, and plugin
+                updates reuse the same activation — they never consume another one.
+              </dd>
+            </div>
+            <div>
+              <dt>My premium features stopped working. Why?</dt>
+              <dd>
+                Almost always an activation still held by an installation you no longer use. Resetting
+                your database, changing your license key, or moving to a new server registers a fresh
+                installation while the old one keeps its slot. Deactivate the old site from your
+                account dashboard and restart Strapi.
+              </dd>
+            </div>
+            <div>
+              <dt>What if my server can&rsquo;t reach the license service?</dt>
+              <dd>
+                Premium features keep working for 14 days from the last successful check, so an
+                outage on our side never interrupts you.
+              </dd>
+            </div>
+            <div>
+              <dt>What happens when a license expires?</dt>
+              <dd>
+                Premium features switch off, but <strong>your forms, submissions, and data are never
+                touched</strong> — FormFlow keeps capturing submissions as the free tier.
+              </dd>
+            </div>
+            <div>
+              <dt>I rebuild environments often (CI, preview deploys).</dt>
+              <dd>
+                Each rebuilt environment registers as a new installation. Contact us and we&rsquo;ll
+                raise your activation quota.
+              </dd>
+            </div>
+          </dl>
         </div>
       </section>
 
