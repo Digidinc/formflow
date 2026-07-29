@@ -1521,13 +1521,27 @@ code {
 .footer-col a:hover {
   color: var(--accent-ink);
 }
+/* Legal strip: licensing sentence on the left, legal page links on the right;
+   wraps to stacked lines on narrow footers. */
 .footer-legal {
   grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 24px;
   margin-top: 16px;
   padding-top: 24px;
   border-top: 1px solid var(--line);
   color: var(--ink-3);
   font-size: 0.86rem;
+}
+.footer-legal a {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.footer-legal a:hover {
+  color: var(--accent-ink);
 }
 
 /* ----------------------------------------------------------------- */

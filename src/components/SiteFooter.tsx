@@ -51,9 +51,10 @@ export default function SiteFooter() {
           ))}
         </div>
       </nav>
-      <p className="footer-legal">
-        Open-core. Free core under MIT; premium features under the FormFlow EE license.
-      </p>
+      <div className="footer-legal">
+        <p>Open-core. Free core under MIT; premium features under the FormFlow EE license.</p>
+        <Link to="/terms">Terms &amp; Conditions</Link>
+      </div>
     </footer>
   );
 }
