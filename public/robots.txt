@@ -1,4 +1,4 @@
-# FormFlow — https://hrahimi270.github.io/formflow/
+# FormFlow — https://digidinc.github.io/formflow/
 # Note: on a github.io project subpath this file lives at /formflow/robots.txt.
 # Crawlers read robots.txt from the domain root, so also submit the sitemap
 # directly in Google Search Console. A custom domain removes this caveat.
@@ -43,4 +43,4 @@ Allow: /
 User-agent: cohere-ai
 Allow: /
 
-Sitemap: https://hrahimi270.github.io/formflow/sitemap.xml
+Sitemap: https://digidinc.github.io/formflow/sitemap.xml
