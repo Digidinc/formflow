@@ -43,9 +43,9 @@ export function Component() {
             <Callout type="note">
               <p>
                 <strong>In short:</strong> the FormFlow core is free and MIT-licensed forever. Paid
-                plans unlock premium features and renew once a year. Refunds are available for 30
-                days. Your forms and submissions live on your own servers, stay yours, and keep
-                working even if a licence lapses.
+                plans unlock premium features and renew once a year. Refunds are available for 14
+                days, no questions asked. Your forms and submissions live on your own servers, stay
+                yours, and keep working even if a licence lapses.
               </p>
             </Callout>
 
@@ -222,10 +222,10 @@ export function Component() {
               affected.
             </p>
 
-            <h2 id="refunds">6. 30-day money-back guarantee</h2>
+            <h2 id="refunds">6. 14-day money-back guarantee</h2>
             <p>
               If FormFlow is not right for you, ask for a refund within{' '}
-              <strong>30 days</strong> of your purchase and we will refund it in full. No
+              <strong>14 days</strong> of your purchase and we will refund it in full. No
               justification required, though we would genuinely like to hear what went wrong.
             </p>
             <p>
