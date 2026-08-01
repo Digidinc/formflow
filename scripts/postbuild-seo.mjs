@@ -29,6 +29,8 @@ if (!existsSync(dist)) {
 const routes = [
   { loc: '/', priority: '1.0', changefreq: 'weekly', lastmod: today },
   { loc: '/blog', priority: '0.8', changefreq: 'weekly', lastmod: today },
+  // lastmod tracks the "Last updated" date in src/pages/Terms.tsx — bump both together.
+  { loc: '/terms', priority: '0.3', changefreq: 'yearly', lastmod: '2026-07-29' },
 ];
 
 const categories = existsSync(blogDir)

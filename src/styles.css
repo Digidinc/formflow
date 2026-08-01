@@ -1236,41 +1236,6 @@ code {
   border-color: var(--accent);
   box-shadow: 0 18px 50px rgba(43, 80, 246, 0.16);
 }
-.price-flag {
-  position: absolute;
-  top: -12px;
-  left: 28px;
-  padding: 5px 13px;
-  border-radius: 999px;
-  background: var(--accent);
-  color: #fff;
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  box-shadow: 0 6px 16px rgba(43, 80, 246, 0.32);
-}
-.price-flag.soon {
-  background: var(--ink-2);
-  box-shadow: none;
-}
-.price-card.is-soon {
-  border-style: dashed;
-  border-color: var(--line-strong);
-}
-.price-card.is-soon .price-blurb,
-.price-card.is-soon .price-features {
-  opacity: 0.72;
-}
-.price-amount .soon-price {
-  font-size: 1.7rem;
-  color: var(--ink-3);
-}
-.price-cta:disabled,
-.price-cta[aria-disabled='true'] {
-  opacity: 0.6;
-  cursor: not-allowed;
-  pointer-events: none;
-}
 .price-tier {
   display: flex;
   align-items: center;
@@ -1521,13 +1486,27 @@ code {
 .footer-col a:hover {
   color: var(--accent-ink);
 }
+/* Legal strip: licensing sentence on the left, legal page links on the right;
+   wraps to stacked lines on narrow footers. */
 .footer-legal {
   grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px 24px;
   margin-top: 16px;
   padding-top: 24px;
   border-top: 1px solid var(--line);
   color: var(--ink-3);
   font-size: 0.86rem;
+}
+.footer-legal a {
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.footer-legal a:hover {
+  color: var(--accent-ink);
 }
 
 /* ----------------------------------------------------------------- */

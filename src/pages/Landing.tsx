@@ -3,7 +3,7 @@ import type { ReactNode } from 'react';
 import Seo from '../components/seo/Seo';
 import JsonLd from '../components/seo/JsonLd';
 import { organizationSchema, websiteSchema } from '../lib/schema';
-import { REPO_URL, SDK_REPO_URL, NPM_URL } from '../config/site';
+import { CHECKOUT_URLS, REPO_URL, SDK_REPO_URL, NPM_URL } from '../config/site';
 
 /* ------------------------------------------------------------------ *
  * Data — single source of truth, hoisted to module scope.
@@ -223,8 +223,8 @@ const pricing: {
   badge: Tier;
   blurb: string;
   features: string[];
-  available: boolean;
-  cta?: string;
+  cta: string;
+  href: string;
   // Free is a single flat price; paid tiers are annual recurring.
   flat?: Price;
   annual?: Price;
@@ -232,8 +232,8 @@ const pricing: {
   {
     tier: 'Free',
     badge: 'free',
-    available: true,
     cta: 'Install free',
+    href: '#install',
     flat: { price: '$0', note: 'free forever · MIT' },
     blurb: 'A production-ready form builder. Not a trial.',
     features: [
@@ -249,7 +249,8 @@ const pricing: {
   {
     tier: 'Pro',
     badge: 'pro',
-    available: false,
+    cta: 'Buy Pro',
+    href: CHECKOUT_URLS.pro,
     blurb: 'Everything to ship serious forms.',
     annual: { price: '$79', note: 'per project · billed yearly' },
     features: [
@@ -265,7 +266,8 @@ const pricing: {
   {
     tier: 'Business',
     badge: 'business',
-    available: false,
+    cta: 'Buy Business',
+    href: CHECKOUT_URLS.business,
     blurb: 'For compliance-bound teams.',
     annual: { price: '$299', note: 'per project · billed yearly' },
     features: [
@@ -274,7 +276,7 @@ const pricing: {
       'Consent fields, per-subject export/delete',
       'Audit log & approval workflows',
       'Multi-language forms',
-      'Priority support & SLA',
+      'Priority support',
     ],
   },
 ];
@@ -292,7 +294,7 @@ const matrix: { capability: string; free: Cell; pro: Cell; business: Cell }[] = 
   { capability: 'Advanced spam (v3, Turnstile, hCaptcha, blocklist)', free: false, pro: true, business: true },
   { capability: 'Analytics, Excel/PDF export, save & resume, white-label', free: false, pro: true, business: true },
   { capability: 'GDPR toolkit, audit log, approvals, multi-language', free: false, pro: false, business: true },
-  { capability: 'Priority support / SLA', free: false, pro: false, business: true },
+  { capability: 'Priority support', free: false, pro: false, business: true },
 ];
 
 /* ------------------------------------------------------------------ *
@@ -804,8 +806,7 @@ export function Component() {
           {pricing.map((plan) => {
             const p = plan.annual ?? plan.flat!;
             return (
-              <article key={plan.tier} className={`price-card${!plan.available ? ' is-soon' : ''}`}>
-                {plan.available ? null : <span className="price-flag soon">Coming soon</span>}
+              <article key={plan.tier} className="price-card">
                 <div className="price-top">
                   <div className="price-tier">
                     <h3>{plan.tier}</h3>
@@ -827,15 +828,9 @@ export function Component() {
                     </li>
                   ))}
                 </ul>
-                {plan.available ? (
-                  <a className="btn btn-primary price-cta" href="#install">
-                    {plan.cta}
-                  </a>
-                ) : (
-                  <button className="btn btn-ghost price-cta" type="button" disabled aria-disabled="true">
-                    Coming soon
-                  </button>
-                )}
+                <a className="btn btn-primary price-cta" href={plan.href}>
+                  {plan.cta}
+                </a>
               </article>
             );
           })}

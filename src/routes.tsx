@@ -21,6 +21,7 @@ export const routes: RouteRecord[] = [
         lazy: () => import('./pages/blog/PostPage'),
         getStaticPaths: () => getAllPostPaths(),
       },
+      { path: 'terms', lazy: () => import('./pages/Terms') },
       // Pre-rendered 404 page; postbuild copies it to dist/404.html for GitHub Pages.
       { path: '404', lazy: () => import('./pages/NotFound') },
       { path: '*', lazy: () => import('./pages/NotFound') },

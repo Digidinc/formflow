@@ -520,6 +520,23 @@
   margin: 2.4em 0;
 }
 
+/* Definition lists — used by the Terms page's definitions block, and
+   available to MDX posts. */
+.prose dl {
+  margin: 0;
+  display: grid;
+  gap: 0.9em;
+}
+.prose dt {
+  color: var(--ink);
+  font-weight: 700;
+}
+.prose dd {
+  margin: 0.3em 0 0;
+  padding-left: 16px;
+  border-left: 2px solid var(--line);
+}
+
 /* Inline code */
 .prose :not(pre) > code {
   font-family: var(--mono);
@@ -604,6 +621,29 @@
 }
 .prose tbody tr:last-child td {
   border-bottom: none;
+}
+
+/* ----------------------------------------------------------------- */
+/* Legal pages (Terms) — reuse the post shell with a slightly wider   */
+/* measure, since numbered clauses read better with fewer line breaks.*/
+/* ----------------------------------------------------------------- */
+.legal .prose {
+  max-width: 760px;
+}
+/* Restore the flow spacing between blocks. `.prose p/ul/ol/dl { margin: 0 }`
+   are (0,1,1) selectors that outrank the (0,1,0) `.prose > * + *` rule above,
+   so the stack collapses; this (0,2,0) rule wins it back. Scoped to .legal so
+   blog post typography is untouched — worth fixing there separately. */
+.legal .prose > * + * {
+  margin-top: 1.15em;
+}
+/* ...which in turn outranks `.prose h2/h3/h4`, so restate the heading rhythm
+   at (0,2,1). Clause headings need the extra air across 20 sections. */
+.legal .prose > h2 {
+  margin-top: 2em;
+}
+.legal .prose > h3 {
+  margin-top: 1.6em;
 }
 
 /* ----------------------------------------------------------------- */
