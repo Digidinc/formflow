@@ -22,6 +22,13 @@ export const SITE_DESCRIPTION =
 export const REPO_URL = 'https://github.com/Digidinc/strapi-plugin-formflow';
 export const SDK_REPO_URL = 'https://github.com/Digidinc/formflow-sdk';
 export const NPM_URL = 'https://www.npmjs.com/package/@formflowjs/strapi-plugin-formflow';
+export const SUPPORT_EMAIL = 'info@digid.ca';
+
+/** Freemius-hosted production checkout links for the annual paid plans. */
+export const CHECKOUT_URLS = {
+  pro: 'https://checkout.freemius.com/app/34764/plan/59829/',
+  business: 'https://checkout.freemius.com/app/34764/plan/59830/',
+} as const;
 
 /** Default social card for non-article pages: the square brand logo
  * (public/logo.png, 500x500). Post pages override this with their own hero.

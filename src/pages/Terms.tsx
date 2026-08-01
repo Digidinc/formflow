@@ -2,13 +2,11 @@ import Seo from '../components/seo/Seo';
 import Breadcrumbs from '../components/blog/Breadcrumbs';
 import TableOfContents from '../components/blog/TableOfContents';
 import { Callout } from '../components/blog/MDXComponents';
-import { REPO_URL } from '../config/site';
+import { REPO_URL, SUPPORT_EMAIL } from '../config/site';
 import { formatDate } from '../lib/format';
 
 /** Effective / last-updated date for this revision of the Terms. */
-const LAST_UPDATED = '2026-07-29';
-
-const SUPPORT_EMAIL = 'hadi@digid.ca';
+const LAST_UPDATED = '2026-08-01';
 
 export function Component() {
   return (
@@ -55,7 +53,12 @@ export function Component() {
               agreement between you (<strong>&ldquo;you&rdquo;</strong>, the individual or
               organisation using FormFlow) and <strong>Digid Inc.</strong> (
               <strong>&ldquo;we&rdquo;</strong>, <strong>&ldquo;us&rdquo;</strong>,{' '}
-              <strong>&ldquo;our&rdquo;</strong>), a company incorporated in Canada.
+              <strong>&ldquo;our&rdquo;</strong>), a Canadian corporation and the authorized
+              commercial publisher and licensor of FormFlow.
+            </p>
+            <p>
+              FormFlow is developed and maintained by <strong>Bardiya Rahimi</strong> and
+              commercially published by Digid Inc. with the copyright holder&rsquo;s authorization.
             </p>
             <p>
               You accept these Terms when you install, copy, or use FormFlow, or when you buy a
@@ -385,10 +388,11 @@ export function Component() {
 
             <h2 id="ip">12. Intellectual property</h2>
             <p>
-              Except for the rights expressly granted in section 3, Digid Inc. and its licensors
-              retain all right, title, and interest in FormFlow, including all copyright, trade
-              secrets, and other intellectual property in it, and in the FormFlow name, logo, and
-              branding. These Terms grant you a licence, not a sale.
+              Bardiya Rahimi owns the copyright in the original FormFlow code. Digid Inc. is
+              authorized to distribute and commercially license FormFlow and to publish it under
+              Digid Inc. branding. Digid Inc. and the copyright holder retain their respective
+              rights in the software, the FormFlow name and logo, and Digid Inc. branding. These
+              Terms grant you a licence, not a sale.
             </p>
             <p>
               FormFlow includes third-party open-source components, each governed by its own licence.
@@ -553,7 +557,8 @@ export function Component() {
                   GitHub issues
                 </a>
               </li>
-              <li>Company: Digid Inc., Ontario, Canada</li>
+              <li>Commercial publisher and licensor: Digid Inc., Barrie, Ontario, Canada</li>
+              <li>Developer and copyright holder: Bardiya Rahimi</li>
             </ul>
           </div>
         </div>

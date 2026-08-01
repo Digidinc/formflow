@@ -52,7 +52,9 @@ export default function SiteFooter() {
         </div>
       </nav>
       <div className="footer-legal">
-        <p>Open-core. Free core under MIT; premium features under the FormFlow EE license.</p>
+        <p>
+          Developed by Bardiya Rahimi · Commercially published by Digid Inc. · Open-core licensing.
+        </p>
         <Link to="/terms">Terms &amp; Conditions</Link>
       </div>
     </footer>
