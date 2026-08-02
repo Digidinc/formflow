@@ -3,16 +3,16 @@ title: 'Send Telegram notifications for Strapi form submissions'
 description: 'Send a rich Telegram message to a chat, group, or channel every time someone submits a Strapi form — using your own bot, with no webhook or server to run.'
 hero: './hero.png'
 heroAlt: 'A Strapi form submission arriving as a formatted message in a Telegram chat.'
-publishedAt: '2026-07-17'
-updatedAt: '2026-07-17'
-draft: true
+publishedAt: '2026-08-02'
+updatedAt: '2026-08-02'
+draft: false
 featured: false
 tags: ['strapi', 'telegram', 'forms', 'notifications']
 schema:
   type: 'HowTo'
   steps:
     - name: 'Create and secure a bot'
-      text: 'Create a bot with BotFather, copy its token, and store it as an environment variable or an encrypted FormFlow credential.'
+      text: 'Create a bot with BotFather and copy its token, treating it like a password.'
     - name: 'Choose a destination'
       text: 'Pick the chat, group, or channel to notify, and add the bot with permission to send or post messages.'
     - name: 'Add a FormFlow connection'
@@ -29,8 +29,11 @@ you own, and they are outbound-only: FormFlow never runs a server for you,
 installs a webhook, or reads incoming messages. This guide walks through the
 whole setup, from `BotFather` to your first live notification.
 
-Telegram notifications are a **Pro** feature of the
-[FormFlow Strapi plugin](https://www.npmjs.com/package/@formflowjs/strapi-plugin-formflow).
+Telegram notifications are part of the
+[FormFlow Strapi plugin](https://www.npmjs.com/package/@formflowjs/strapi-plugin-formflow)
+and work on **every tier, including the free one**. What changes with the tier is how many
+bot connections you can keep at once: **1 on Free, 2 on Pro, 4 on Business**. One connection
+is enough to notify as many forms as you like.
 
 ## What you get
 
@@ -61,7 +64,7 @@ channels just need the bot added.
 
 ## Before you start
 
-- [ ] A Strapi v5 project with the FormFlow plugin installed and a **Pro** license
+- [ ] A Strapi v5 project with the FormFlow plugin installed — the free tier is enough
 - [ ] A Telegram account you can use to create a bot
 - [ ] A destination in mind — a personal chat, a team group, or a channel
 
@@ -71,26 +74,17 @@ Open [@BotFather](https://t.me/BotFather) in Telegram, run `/newbot`, and follow
 the prompts. When it finishes, it hands you a **Bot API token**. Copy it once and
 treat it like a password — anyone holding it controls the bot.
 
-In production, the cleanest approach is to keep the token in a server-only
-environment variable and hand FormFlow only the *name* of that variable:
-
-```bash
-# a server-only secret — never in source control or browser code
-export TELEGRAM_NOTIFICATIONS_TOKEN="123456789:AA…"
-```
-
-If you'd rather have FormFlow store the token itself, it encrypts it with
-AES-256-GCM first. That requires a stable 32-byte key, base64-encoded, in
-`FORMFLOW_ENCRYPTION_KEY`:
-
-```bash
-export FORMFLOW_ENCRYPTION_KEY="$(openssl rand -base64 32)"
-```
+You paste that token into FormFlow once. It is held in Strapi's own plugin store,
+which is what lets you set the whole thing up from the admin panel without touching
+a config file or redeploying — and what lets you rotate the token later without
+editing a single form.
 
 <Callout type="warning">
-Keep `FORMFLOW_ENCRYPTION_KEY` stable across restarts and replicas. If it changes
-or goes missing, previously stored tokens can't be decrypted. Rotate the key only
-alongside the credentials it protects.
+The token lives in your Strapi database, so **your database and its backups now
+contain a credential**. Protect them the way you would any other secret store, and
+keep the token out of source control, screenshots, and support tickets. If it ever
+leaks, revoke it in BotFather, use **Replace token** in FormFlow Settings, and send
+a fresh test.
 </Callout>
 
 ## Step 2 — Choose a destination
@@ -109,28 +103,52 @@ on where you're sending:
 Grant the *minimum* the destination requires. A channel bot needs to post; it
 does not need to edit, delete, invite, or manage members.
 
+### Finding the chat ID
+
+Public groups and channels are easy — use the `@username`. Private chats and groups
+have no username, only a numeric ID, and Telegram doesn't show it anywhere in the
+interface.
+
+The quickest way to find it: forward any message from that chat to
+[@RawDataBot](https://t.me/RawDataBot). It replies with the raw JSON Telegram holds
+for that message, and the ID you want is `forward_from_chat.id` (or `chat.id` if you
+message the bot directly). Paste that number straight into FormFlow's **Destination**
+field — including the leading `-` for groups and channels, which is part of the ID.
+
+<Callout type="note">
+`@RawDataBot` is a third-party utility, not something we run. Use it to read an ID
+and then move on — don't forward anything sensitive to it.
+</Callout>
+
 ## Step 3 — Add a FormFlow connection
 
-In the Strapi admin, go to **FormFlow Settings → Telegram** and add a connection.
+In the Strapi admin, go to **FormFlow Settings → Telegram**. The panel shows how many
+connections your licence allows and how many you've used.
+
+![The FormFlow Settings screen in Strapi, showing an empty Telegram connections panel with an Add connection button.](./settings-connections-empty.png)
 
 <Steps>
-  1. Choose your credential source — the environment-variable name from Step 1, or an encrypted stored token.
-  2. Save. FormFlow calls Telegram to confirm the bot's identity and shows you which bot you just connected.
-  3. Send the **connection test**. It uses fixed sample text and no real submission data, so it's safe to run anytime.
+  1. Click **Add connection** and give it a name you'll recognise later, plus the bot token from Step 1.
+  2. Click **Validate**. FormFlow asks Telegram who the bot is and shows you the name and `@username` it got back, so you can catch a pasted-wrong token before saving.
+  3. Save, then send the **connection test**. It uses fixed sample text and no real submission data, so it's safe to run anytime.
 </Steps>
 
-A Pro installation keeps **one** active connection, reusable across every form —
-so rotating a token or renaming the connection never breaks the forms that point
-at it.
+![The Add Telegram connection dialog, with fields for a connection name and the bot token.](./settings-add-connection.png)
+
+One connection is reusable across every form, so rotating a token or renaming the
+connection never breaks the forms pointing at it. Extra connections are only for
+genuinely separate bots — a second brand, or a client you keep isolated.
 
 ## Step 4 — Turn it on for a form
 
 Open the form you want to wire up and go to its **Notifications → Telegram** tab.
 
+![The Telegram notification section of a FormFlow form, with a connection picker, destination field, message template editor, and live preview.](./form-telegram-tab.png)
+
 <Steps>
   1. Select the connection and enter the destination from Step 2.
-  2. Design the message in FormFlow's focused editor — headings, bold, lists, and a variable picker for your form's fields. You never touch raw HTML or Bot API JSON.
-  3. Send a test message to the real destination, then flip the toggle on and save the form.
+  2. Design the message in FormFlow's focused editor — headings, bold, lists, and an **Insert form variable** picker for your form's fields. You never touch raw HTML or Bot API JSON, and the preview beside it shows what will actually arrive.
+  3. Send a test message to the real destination, then switch the toggle to **Enabled** and save the form.
 </Steps>
 
 Field variables reference **stable field IDs**, not labels — so renaming a field
