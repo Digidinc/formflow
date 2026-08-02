@@ -1,7 +1,7 @@
 ---
 title: 'Send Telegram notifications for Strapi form submissions'
 description: 'Send a rich Telegram message to a chat, group, or channel every time someone submits a Strapi form — using your own bot, with no webhook or server to run.'
-hero: './hero.png'
+hero: './hero.jpg'
 heroAlt: 'A Strapi form submission arriving as a formatted message in a Telegram chat.'
 publishedAt: '2026-08-02'
 updatedAt: '2026-08-02'
@@ -133,7 +133,12 @@ connections your licence allows and how many you've used.
   3. Save, then send the **connection test**. It uses fixed sample text and no real submission data, so it's safe to run anytime.
 </Steps>
 
-![The Add Telegram connection dialog, with fields for a connection name and the bot token.](./settings-add-connection.png)
+![The Add Telegram connection dialog with a name and bot token filled in, showing a green "Bot validated" confirmation naming the bot it reached.](./settings-bot-validated.png)
+
+Once saved, the connection appears in the list with the bot it's bound to and a
+**Connected** status:
+
+![The Telegram connections table showing one saved connection, its bot, a credential stored in Strapi, and a Connected status.](./settings-connection-saved.png)
 
 One connection is reusable across every form, so rotating a token or renaming the
 connection never breaks the forms pointing at it. Extra connections are only for
@@ -150,6 +155,11 @@ Open the form you want to wire up and go to its **Notifications → Telegram** t
   2. Design the message in FormFlow's focused editor — headings, bold, lists, and an **Insert form variable** picker for your form's fields. You never touch raw HTML or Bot API JSON, and the preview beside it shows what will actually arrive.
   3. Send a test message to the real destination, then switch the toggle to **Enabled** and save the form.
 </Steps>
+
+Configured and switched on, it looks like this — connection chosen, destination set,
+template written, and **Send test** ready to prove the whole path before you rely on it:
+
+![The same Telegram notification section, now enabled, with a connection selected, a destination entered, and a completed message template.](./form-telegram-configured.png)
 
 Field variables reference **stable field IDs**, not labels — so renaming a field
 in the builder keeps your template intact. Delete a field a template still uses,
