@@ -467,9 +467,10 @@
   margin-top: 1.4em;
   font-size: 1.08rem;
 }
-.prose p {
-  margin: 0;
-}
+/* No `margin: 0` here. `.prose p` (0,1,1) outranks the `.prose > * + *` (0,1,0)
+   spacing rule above, so resetting the margin here silently collapses the gap
+   between every paragraph. The global `p { margin: 0 }` reset already zeroes it,
+   and the sibling rule is what puts the spacing back. */
 .prose a {
   color: var(--accent-ink);
   text-decoration: underline;
@@ -492,7 +493,8 @@
 }
 .prose ul,
 .prose ol {
-  margin: 0;
+  /* Same reason as `.prose p` above: no margin reset, or the sibling spacing
+     rule loses to this selector and lists sit flush against the prose. */
   padding-left: 1.4em;
   display: grid;
   gap: 0.5em;
