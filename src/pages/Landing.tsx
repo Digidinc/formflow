@@ -10,7 +10,13 @@ import { CHECKOUT_URLS, REPO_URL, SDK_REPO_URL, NPM_URL } from '../config/site';
  * Numbers and names mirror the published plugin + SDK packages.
  * ------------------------------------------------------------------ */
 
-type Tier = 'free' | 'pro' | 'business';
+/**
+ * Badge/gating labels used across the page. `agency` is a billing plan, not an
+ * entitlement tier — it carries the Business feature set with an unlimited
+ * activation quota — so it never appears as a field-gating value, only on a
+ * pricing card. See ADR-0003 in the plugin repo.
+ */
+type Tier = 'free' | 'pro' | 'business' | 'agency';
 
 const compat = ['Strapi 5', 'REST API', 'React', 'Vue', 'Next.js', 'Nuxt', 'Astro', 'Vite'];
 
@@ -225,6 +231,8 @@ const pricing: {
   features: string[];
   cta: string;
   href: string;
+  /** Draws the accent border. Exactly one plan should carry it. */
+  featured?: boolean;
   // Free is a single flat price; paid tiers are annual recurring.
   flat?: Price;
   annual?: Price;
@@ -251,8 +259,9 @@ const pricing: {
     badge: 'pro',
     cta: 'Buy Pro',
     href: CHECKOUT_URLS.pro,
+    featured: true,
     blurb: 'Everything to ship serious forms.',
-    annual: { price: '$79', note: 'per project · billed yearly' },
+    annual: { price: '$149', note: '1 project · billed yearly' },
     features: [
       'Everything in Free, plus —',
       'Advanced fields & conditional logic',
@@ -269,32 +278,48 @@ const pricing: {
     cta: 'Buy Business',
     href: CHECKOUT_URLS.business,
     blurb: 'For compliance-bound teams.',
-    annual: { price: '$299', note: 'per project · billed yearly' },
+    annual: { price: '$449', note: '3 projects · billed yearly' },
     features: [
       'Everything in Pro, plus —',
       'GDPR retention & anonymization',
       'Consent fields, per-subject export/delete',
       'Audit log & approval workflows',
       'Multi-language forms',
-      'Priority support',
+      'Priority email support',
+    ],
+  },
+  {
+    tier: 'Agency',
+    badge: 'agency',
+    cta: 'Buy Agency',
+    href: CHECKOUT_URLS.agency,
+    blurb: 'Every client site, one licence.',
+    annual: { price: '$999', note: 'unlimited · billed yearly' },
+    features: [
+      'Everything in Business, plus —',
+      'Unlimited project activations',
+      'One key across every client build',
+      'Add or retire sites without re-buying',
+      'Staging & preview deploys included',
     ],
   },
 ];
 
-type Cell = boolean | 'all';
-const matrix: { capability: string; free: Cell; pro: Cell; business: Cell }[] = [
-  { capability: 'Unlimited forms & submissions', free: true, pro: true, business: true },
-  { capability: 'Core field types, validation, inbox', free: true, pro: true, business: true },
-  { capability: 'File upload field', free: true, pro: true, business: true },
-  { capability: 'CSV / JSON export', free: true, pro: true, business: true },
-  { capability: 'Spam basics (honeypot, rate limit, v2)', free: true, pro: true, business: true },
-  { capability: 'One admin email notification', free: true, pro: true, business: true },
-  { capability: 'Conditional logic, multi-step, advanced fields', free: false, pro: true, business: true },
-  { capability: 'Advanced email, webhooks, integrations', free: false, pro: true, business: true },
-  { capability: 'Advanced spam (v3, Turnstile, hCaptcha, blocklist)', free: false, pro: true, business: true },
-  { capability: 'Analytics, Excel/PDF export, save & resume, white-label', free: false, pro: true, business: true },
-  { capability: 'GDPR toolkit, audit log, approvals, multi-language', free: false, pro: false, business: true },
-  { capability: 'Priority support', free: false, pro: false, business: true },
+type Cell = boolean | string;
+const matrix: { capability: string; free: Cell; pro: Cell; business: Cell; agency: Cell }[] = [
+  { capability: 'Unlimited forms & submissions', free: true, pro: true, business: true, agency: true },
+  { capability: 'Core field types, validation, inbox', free: true, pro: true, business: true, agency: true },
+  { capability: 'File upload field', free: true, pro: true, business: true, agency: true },
+  { capability: 'CSV / JSON export', free: true, pro: true, business: true, agency: true },
+  { capability: 'Spam basics (honeypot, rate limit, v2)', free: true, pro: true, business: true, agency: true },
+  { capability: 'One admin email notification', free: true, pro: true, business: true, agency: true },
+  { capability: 'Conditional logic, multi-step, advanced fields', free: false, pro: true, business: true, agency: true },
+  { capability: 'Advanced email, webhooks, integrations', free: false, pro: true, business: true, agency: true },
+  { capability: 'Advanced spam (v3, Turnstile, hCaptcha, blocklist)', free: false, pro: true, business: true, agency: true },
+  { capability: 'Analytics, Excel/PDF export, save & resume, white-label', free: false, pro: true, business: true, agency: true },
+  { capability: 'GDPR toolkit, audit log, approvals, multi-language', free: false, pro: false, business: true, agency: true },
+  { capability: 'Priority email support', free: false, pro: false, business: true, agency: true },
+  { capability: 'Projects per licence', free: 'Unlimited', pro: '1', business: '3', agency: 'Unlimited' },
 ];
 
 /* ------------------------------------------------------------------ *
@@ -359,7 +384,12 @@ function CaretIcon() {
   );
 }
 
-const tierLabel: Record<Tier, string> = { free: 'Free', pro: 'Pro', business: 'Business' };
+const tierLabel: Record<Tier, string> = {
+  free: 'Free',
+  pro: 'Pro',
+  business: 'Business',
+  agency: 'Agency',
+};
 
 /* ------------------------------------------------------------------ *
  * Reveal — one IntersectionObserver per wrapper, disconnects on first
@@ -653,7 +683,7 @@ export function Component() {
           <SectionLabel index="03">Field registry</SectionLabel>
           <h2 id="fields-title">Twenty-plus field types, from text to signature.</h2>
           <p className="section-sub">
-            Free covers the inputs every form needs. Advanced fields unlock on Pro and Business — the
+            Free covers the inputs every form needs. Advanced fields unlock on any paid plan — the
             builder shows exactly which is which.
           </p>
         </div>
@@ -796,17 +826,21 @@ export function Component() {
       <section className="section pricing" id="pricing" aria-labelledby="pricing-title">
         <div className="section-head center">
           <SectionLabel index="06">Pricing</SectionLabel>
-          <h2 id="pricing-title">Start free. Upgrade per project when your workflows grow.</h2>
+          <h2 id="pricing-title">Start free. Upgrade when your workflows grow.</h2>
           <p className="section-sub">
-            The free core is genuinely production-ready — not a trial. Pro and Business are gated at
-            runtime by a license key; remove it and FormFlow keeps capturing submissions as the free tier.
+            The free core is genuinely production-ready — not a trial. Paid plans are gated at
+            runtime by a license key; remove it and FormFlow keeps capturing submissions as the free
+            tier. Pro and Business cover one and three projects; Agency covers as many as you run.
           </p>
         </div>
         <div className="price-grid">
           {pricing.map((plan) => {
             const p = plan.annual ?? plan.flat!;
             return (
-              <article key={plan.tier} className="price-card">
+              <article
+                key={plan.tier}
+                className={plan.featured ? 'price-card is-featured' : 'price-card'}
+              >
                 <div className="price-top">
                   <div className="price-tier">
                     <h3>{plan.tier}</h3>
@@ -842,8 +876,9 @@ export function Component() {
             <div>
               <dt>What counts as a &ldquo;project&rdquo;?</dt>
               <dd>
-                One license activates one FormFlow installation. Restarts, redeploys, and plugin
-                updates reuse the same activation — they never consume another one.
+                One activation covers one FormFlow installation. Pro includes one, Business three,
+                and Agency as many as you need. Restarts, redeploys, and plugin updates reuse the
+                same activation — they never consume another one.
               </dd>
             </div>
             <div>
@@ -894,15 +929,18 @@ export function Component() {
                   <th>Free</th>
                   <th>Pro</th>
                   <th>Business</th>
+                  <th>Agency</th>
                 </tr>
               </thead>
               <tbody>
                 {matrix.map((row) => (
                   <tr key={row.capability}>
                     <td>{row.capability}</td>
-                    {[row.free, row.pro, row.business].map((cell, i) => (
+                    {[row.free, row.pro, row.business, row.agency].map((cell, i) => (
                       <td key={i}>
-                        {cell ? (
+                        {typeof cell === 'string' ? (
+                          <span className="count">{cell}</span>
+                        ) : cell ? (
                           <span className="yes">
                             <CheckIcon />
                           </span>
@@ -928,7 +966,7 @@ export function Component() {
             <h2 id="install-title">Add FormFlow to Strapi, then wire any frontend.</h2>
             <p>
               Requires Strapi v5. The plugin creates its own content types automatically — no migration.
-              A Pro or Business key is read server-side from one env var and degrades safely to Free
+              A paid license key is read server-side from one env var and degrades safely to Free
               with zero data loss.
             </p>
             <div className="install-actions">

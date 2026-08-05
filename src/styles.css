@@ -19,7 +19,7 @@
   --line-strong: #cdd5e0;
 
   /* Accents — cobalt = focus/interactive, green = valid/included,
-     violet = Business, coral = error (used sparingly) */
+     violet = Business, amber = Agency, coral = error (used sparingly) */
   --accent: #2b50f6;
   --accent-ink: #1d3ad6;
   --accent-wash: #eaeefe;
@@ -28,6 +28,8 @@
   --valid-wash: #e6f7f0;
   --violet: #7a5af8;
   --violet-wash: #efeafe;
+  --amber-ink: #a45510;
+  --amber-wash: #fdf0dc;
   --coral: #ff5a5f;
 
   /* Dark band (install/footer) */
@@ -1217,8 +1219,8 @@ code {
 
 .price-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
   align-items: stretch;
 }
 .price-card {
@@ -1226,7 +1228,9 @@ code {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 28px;
+  /* Four cards share a 1140px container, so the horizontal padding is trimmed
+     to keep ~215px of content width per card. */
+  padding: 26px 22px;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: var(--surface);
@@ -1264,6 +1268,10 @@ code {
 .tier-business {
   background: var(--violet-wash);
   color: var(--violet);
+}
+.tier-agency {
+  background: var(--amber-wash);
+  color: var(--amber-ink);
 }
 .price-blurb {
   color: var(--ink-2);
@@ -1393,6 +1401,13 @@ code {
 .no {
   color: var(--line-strong);
   font-weight: 700;
+}
+/* Numeric/'Unlimited' cells in the comparison matrix — a quantity, not a tick. */
+.count {
+  color: var(--ink-2);
+  font-weight: 650;
+  font-size: 0.88rem;
+  white-space: nowrap;
 }
 
 /* ----------------------------------------------------------------- */
@@ -1595,9 +1610,13 @@ code {
     grid-template-columns: 1fr;
   }
   .price-grid {
-    grid-template-columns: 1fr;
-    max-width: 460px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    max-width: 720px;
     margin: 0 auto;
+  }
+  .price-card {
+    padding: 28px;
   }
 }
 
@@ -1616,6 +1635,10 @@ code {
 @media (max-width: 600px) {
   html {
     scroll-padding-top: 80px;
+  }
+  .price-grid {
+    grid-template-columns: 1fr;
+    max-width: 460px;
   }
   .nav {
     top: 8px;

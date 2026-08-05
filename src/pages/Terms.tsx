@@ -13,7 +13,7 @@ export function Component() {
     <article className="post legal">
       <Seo
         title="Terms & Conditions"
-        description="The terms that govern your use of the FormFlow Strapi plugin, its free MIT-licensed core, its premium Enterprise Edition features, and paid Pro and Business plans."
+        description="The terms that govern your use of the FormFlow Strapi plugin, its free MIT-licensed core, its premium Enterprise Edition features, and the paid Pro, Business and Agency plans."
       />
 
       <div className="post-head">
@@ -26,7 +26,8 @@ export function Component() {
         <h1 className="post-title">Terms &amp; Conditions</h1>
         <p className="post-desc">
           These Terms govern your use of FormFlow — the free core, the premium Enterprise Edition
-          features, and the paid Pro and Business plans. Please read them before you buy or deploy.
+          features, and the paid Pro, Business and Agency plans. Please read them before you buy or
+          deploy.
         </p>
         <p className="post-meta">
           <span>Last updated</span>
@@ -191,10 +192,15 @@ export function Component() {
 
             <h2 id="plans-billing">5. Plans, billing, renewal and cancellation</h2>
             <p>
-              We offer a free tier and two paid plans: <strong>Pro at US$79 per year</strong> and{' '}
-              <strong>Business at US$299 per year</strong>. Both are priced <strong>per project</strong>{' '}
-              and sold as <strong>annual subscriptions only</strong>. We do not offer a lifetime
-              plan.
+              We offer a free tier and three paid plans: <strong>Pro at US$149 per year</strong>{' '}
+              (one project), <strong>Business at US$449 per year</strong> (three projects), and{' '}
+              <strong>Agency at US$999 per year</strong> (unlimited projects). All are sold as{' '}
+              <strong>annual subscriptions only</strong>. We do not offer a lifetime plan.
+            </p>
+            <p>
+              Agency carries the same features as Business; what it adds is an unlimited number of
+              Activations, so a single licence covers every project you run. Prices are in US
+              dollars and exclude any tax Freemius calculates at checkout for your location.
             </p>
             <p>
               <strong>Freemius is the Merchant of Record</strong> for every FormFlow purchase. That
@@ -310,8 +316,15 @@ export function Component() {
               </a>{' '}
               (best for bugs and feature requests, and open to free-tier users too), and email to{' '}
               <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a> for licensing, billing, and
-              account matters. Paid customers get priority, in the ordinary sense of the word rather
-              than as a contractual commitment.
+              account matters. <strong>Business and Agency</strong> include priority email support —
+              priority in the ordinary sense of the word, meaning we get to you sooner, not a
+              contractual commitment to any particular response time.
+            </p>
+            <p>
+              Support is for <strong>the licence holder</strong>. If you hold an Agency licence and
+              deploy FormFlow for clients, we support <em>you</em> — we do not act as a support desk
+              for your clients or their end users, and we will ask you to raise issues on their
+              behalf.
             </p>
             <p>
               Support covers unmodified FormFlow running on a supported version of Strapi. We are
@@ -332,7 +345,10 @@ export function Component() {
                 reversible and does not identify you or your server.
               </li>
               <li>Plugin, Strapi, and Node.js version numbers.</li>
-              <li>Your licence tier (free, Pro, or Business).</li>
+              <li>
+                Your licence tier (free, Pro, or Business). Agency reports as Business, because the
+                two grant the same features and the plan itself is not sent.
+              </li>
               <li>A count of how many forms exist.</li>
               <li>
                 An approximate country, derived at the network edge. We do not receive, log, or store

@@ -24,10 +24,19 @@ export const SDK_REPO_URL = 'https://github.com/Digidinc/formflow-sdk';
 export const NPM_URL = 'https://www.npmjs.com/package/@formflowjs/strapi-plugin-formflow';
 export const SUPPORT_EMAIL = 'info@digid.ca';
 
-/** Freemius-hosted production checkout links for the annual paid plans. */
+/**
+ * Freemius-hosted production checkout links for the annual paid plans.
+ *
+ * `licenses` is REQUIRED on any plan whose activation count is not 1 (`0` means
+ * unlimited). The checkout defaults to a single licence, so omitting it on Agency
+ * makes Freemius look for a 1-activation price that does not exist and return an
+ * EMPTY page — a silently dead buy button. Business currently falls back on its
+ * own, but it is pinned here too rather than relying on that behaviour.
+ */
 export const CHECKOUT_URLS = {
-  pro: 'https://checkout.freemius.com/app/34764/plan/59829/',
-  business: 'https://checkout.freemius.com/app/34764/plan/59830/',
+  pro: 'https://checkout.freemius.com/app/34764/plan/59829/?licenses=1',
+  business: 'https://checkout.freemius.com/app/34764/plan/59830/?licenses=3',
+  agency: 'https://checkout.freemius.com/app/34764/plan/60487/?licenses=0',
 } as const;
 
 /** Default social card for non-article pages: the square brand logo
