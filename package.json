@@ -8,7 +8,8 @@
     "dev": "vite-react-ssg dev",
     "build": "tsc --noEmit && vite-react-ssg build && node scripts/postbuild-seo.mjs",
     "preview": "vite preview --outDir dist",
-    "check": "tsc --noEmit --pretty false"
+    "check": "tsc --noEmit --pretty false",
+    "test:custom-domain": "node scripts/custom-domain-build.test.mjs"
   },
   "dependencies": {
     "@mdx-js/react": "^3.1.1",
@@ -30,6 +31,7 @@
   },
   "devDependencies": {
     "@types/mdx": "^2.0.14",
+    "@types/node": "^22.20.1",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
     "@vitejs/plugin-react": "^4.7.0",

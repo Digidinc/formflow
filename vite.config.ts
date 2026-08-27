@@ -11,11 +11,16 @@ import rehypeMdxImportMedia from 'rehype-mdx-import-media';
 import { toString as mdastToString } from 'mdast-util-to-string';
 import getReadingTime from 'reading-time';
 
+import type { Literal, Property } from 'estree-jsx';
+import type { Root } from 'mdast';
+import type { MdxjsEsm } from 'mdast-util-mdxjs-esm';
+import type { VFile } from 'vfile';
+
 // Computes reading time from the MDX body and exposes it as a named ESM export
 // (`readingTime`) on the compiled module — reliable, unlike reading a `.mdx?raw`
 // import (which the MDX plugin intercepts).
 function remarkReadingTime() {
-  return (tree, file) => {
+  return (tree: Root, file: VFile) => {
     const stats = getReadingTime(mdastToString(tree));
     const data = {
       text: stats.text,
@@ -23,7 +28,7 @@ function remarkReadingTime() {
       words: stats.words,
     };
     file.data.readingTime = data;
-    tree.children.unshift({
+    const readingTimeExport: MdxjsEsm = {
       type: 'mdxjsEsm',
       value: `export const readingTime = ${JSON.stringify(data)}`,
       data: {
@@ -34,6 +39,7 @@ function remarkReadingTime() {
             {
               type: 'ExportNamedDeclaration',
               specifiers: [],
+              attributes: [],
               source: null,
               declaration: {
                 type: 'VariableDeclaration',
@@ -57,11 +63,12 @@ function remarkReadingTime() {
           ],
         },
       },
-    });
+    };
+    tree.children.unshift(readingTimeExport);
   };
 }
 
-function prop(name, value) {
+function prop(name: string, value: Literal): Property {
   return {
     type: 'Property',
     method: false,
@@ -74,16 +81,15 @@ function prop(name, value) {
 }
 
 // `base` must be an ABSOLUTE path so deep routes like /blog/tutorials/<slug>/
-// resolve assets and the react-router basename correctly.
-//   - dev:   `/`
-//   - build: `/formflow/` (GitHub Pages project site) unless GITHUB_PAGES_BASE
-//            overrides it (e.g. set it to `/` once a custom domain is live).
-export default defineConfig(({ command }) => ({
-  base: process.env.GITHUB_PAGES_BASE || (command === 'build' ? '/formflow/' : '/'),
+// resolve assets and the react-router basename correctly. The production site
+// lives at the root of formflow.digid.ca; forks deployed under a GitHub Pages
+// project path can override this with PAGES_BASE_PATH=/repo-name/.
+export default defineConfig(() => ({
+  base: process.env.PAGES_BASE_PATH || '/',
   plugins: [
     // MDX must run BEFORE @vitejs/plugin-react so the React plugin sees JSX.
     {
-      enforce: 'pre',
+      enforce: 'pre' as const,
       ...mdx({
         remarkPlugins: [
           remarkFrontmatter,

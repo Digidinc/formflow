@@ -68,7 +68,12 @@ export function Component() {
       {post.heroUrl ? (
         <figure className="post-hero">
           {/* Hero is the LCP element — load eagerly with high priority. */}
-          <img src={post.heroUrl} alt={fm.heroAlt} decoding="async" fetchPriority="high" />
+          <img
+            src={post.heroUrl}
+            alt={fm.heroAlt}
+            decoding="async"
+            {...{ fetchpriority: 'high' }}
+          />
         </figure>
       ) : null}
 
