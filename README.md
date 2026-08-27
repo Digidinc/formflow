@@ -22,14 +22,16 @@ npm run build
 ## GitHub Pages
 
 The included workflow deploys `dist/` from the `main` branch using GitHub Pages Actions.
+The production site is served from the root of `https://formflow.digid.ca`, so the default
+Vite base is `/`.
 
-If you deploy under a project path and assets need a fixed base, set this repository variable before building:
+For a fork deployed under a GitHub Pages project path, override the base before building:
 
 ```bash
-GITHUB_PAGES_BASE=/your-repo-name/ npm run build
+PAGES_BASE_PATH=/your-repo-name/ npm run build
 ```
 
-By default, Vite uses `./` as the asset base, which is friendly to both user/organization Pages and project Pages.
+The repository's GitHub Actions variable `PAGES_BASE_PATH` should be `/` for the custom domain.
 
 ## Product screenshots
 

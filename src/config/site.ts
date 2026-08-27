@@ -1,16 +1,16 @@
 /* ------------------------------------------------------------------ *
  * Single source of truth for site-wide identity, canonical URLs and
  * SEO defaults. Switching to a custom domain later is a one-line change
- * here (SITE_ORIGIN + BASE_PATH) plus the GITHUB_PAGES_BASE repo var.
+ * here (SITE_ORIGIN + BASE_PATH) plus the PAGES_BASE_PATH repo variable.
  * ------------------------------------------------------------------ */
 
 /** Scheme + host only, no path, no trailing slash. */
-export const SITE_ORIGIN = 'https://digidinc.github.io';
+export const SITE_ORIGIN = 'https://formflow.digid.ca';
 
 /** Deploy sub-path (matches Vite `base`). Empty string once on a root domain. */
-export const BASE_PATH = '/formflow';
+export const BASE_PATH = '';
 
-/** Canonical site root, e.g. https://digidinc.github.io/formflow */
+/** Canonical site root, e.g. https://formflow.digid.ca */
 export const SITE_URL = `${SITE_ORIGIN}${BASE_PATH}`;
 
 export const SITE_NAME = 'FormFlow';
@@ -61,8 +61,8 @@ export const ORG: OrgInfo = {
 /**
  * Turn any URL into an absolute one suitable for canonical/OG tags.
  * - Already-absolute (http...) URLs pass through.
- * - Root-absolute paths (Vite asset URLs like "/formflow/assets/x.png", which
- *   already include BASE_PATH) get the origin prepended.
+ * - Root-absolute paths (Vite asset URLs like "/assets/x.png", which already
+ *   include BASE_PATH) get the origin prepended.
  * - Bare relative paths get origin + "/".
  */
 export function absoluteUrl(url: string): string {
