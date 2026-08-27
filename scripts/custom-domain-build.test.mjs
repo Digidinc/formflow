@@ -44,6 +44,10 @@ if (!robots.includes('Sitemap: https://formflow.digid.ca/sitemap.xml')) {
   failures.push('dist/robots.txt does not advertise the custom-domain sitemap');
 }
 
+if (!index.includes('https://www.clarity.ms/tag/') || !index.includes('y957taa31z')) {
+  failures.push('dist/index.html does not include the Microsoft Clarity tracking tag');
+}
+
 if (deployWorkflow.includes('GITHUB_PAGES_BASE')) {
   failures.push('deploy workflow uses the reserved GITHUB_ prefix for a repository variable');
 }
