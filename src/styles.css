@@ -1501,6 +1501,26 @@ code {
 .footer-col a:hover {
   color: var(--accent-ink);
 }
+.footer-badges {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  margin-top: 16px;
+}
+.footer-badge-link {
+  display: inline-flex;
+  border-radius: 12px;
+}
+.footer-badge-link:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+.footer-badge-link img {
+  display: block;
+  width: 220px;
+  max-width: 100%;
+  height: auto;
+}
 /* Legal strip: licensing sentence on the left, legal page links on the right;
    wraps to stacked lines on narrow footers. */
 .footer-legal {

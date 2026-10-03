@@ -51,6 +51,22 @@ export default function SiteFooter() {
           ))}
         </div>
       </nav>
+      <div className="footer-badges" aria-label="Directory listings">
+        <a
+          className="footer-badge-link"
+          href="https://launchnest.io/p/formflow"
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label="View FormFlow on LaunchNest"
+        >
+          <img
+            src="https://launchnest.io/badge/formflow.svg?variant=listed"
+            alt="FormFlow on LaunchNest"
+            width="220"
+            height="56"
+          />
+        </a>
+      </div>
       <div className="footer-legal">
         <p>
           Developed by Bardiya Rahimi · Commercially published by Digid Inc. · Open-core licensing.

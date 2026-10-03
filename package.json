@@ -9,7 +9,8 @@
     "build": "tsc --noEmit && vite-react-ssg build && node scripts/postbuild-seo.mjs",
     "preview": "vite preview --outDir dist",
     "check": "tsc --noEmit --pretty false",
-    "test:custom-domain": "node scripts/custom-domain-build.test.mjs"
+    "test:custom-domain": "node scripts/custom-domain-build.test.mjs",
+    "test:launchnest-badge": "node scripts/launchnest-badge.test.mjs"
   },
   "dependencies": {
     "@mdx-js/react": "^3.1.1",
