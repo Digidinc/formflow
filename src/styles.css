@@ -1544,6 +1544,34 @@ code {
   color: var(--accent-ink);
 }
 
+/* Product Hunt launch badge: fixed at the viewport edge so it remains visible
+   without competing with the page's primary navigation or content flow. */
+.product-hunt-badge {
+  position: fixed;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 60;
+  display: inline-flex;
+  border-radius: 12px;
+  opacity: 0.96;
+  filter: drop-shadow(0 12px 24px rgba(12, 20, 44, 0.18));
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+.product-hunt-badge:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+.product-hunt-badge:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 4px;
+}
+.product-hunt-badge img {
+  display: block;
+  width: 250px;
+  max-width: calc(100vw - 32px);
+  height: auto;
+}
+
 /* ----------------------------------------------------------------- */
 /* Overflow safety — let scrollable code/text shrink inside grid &   */
 /* flex tracks (min-width:auto is the default that breaks overflow).  */
@@ -1724,6 +1752,13 @@ code {
   .footer-brand {
     grid-column: 1 / -1;
   }
+  .product-hunt-badge {
+    right: max(10px, env(safe-area-inset-right));
+    bottom: max(10px, env(safe-area-inset-bottom));
+  }
+  .product-hunt-badge img {
+    width: 170px;
+  }
 }
 
 @media (max-width: 380px) {
@@ -1747,7 +1782,8 @@ code {
   .btn:hover,
   .sdk-card:hover,
   .field-chip:hover,
-  .nav-cta:hover {
+  .nav-cta:hover,
+  .product-hunt-badge:hover {
     transform: none;
   }
 }

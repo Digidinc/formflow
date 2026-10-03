@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
+import ProductHuntBadge from '../components/ProductHuntBadge';
 import SiteHeader from '../components/SiteHeader';
 import SiteFooter from '../components/SiteFooter';
 import '../styles.css';
@@ -37,6 +38,7 @@ export default function RootLayout() {
       <main id="main">
         <Outlet />
       </main>
+      <ProductHuntBadge />
       <SiteFooter />
     </div>
   );

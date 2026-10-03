@@ -10,7 +10,8 @@
     "preview": "vite preview --outDir dist",
     "check": "tsc --noEmit --pretty false",
     "test:custom-domain": "node scripts/custom-domain-build.test.mjs",
-    "test:launchnest-badge": "node scripts/launchnest-badge.test.mjs"
+    "test:launchnest-badge": "node scripts/launchnest-badge.test.mjs",
+    "test:product-hunt-badge": "node scripts/product-hunt-badge.test.mjs"
   },
   "dependencies": {
     "@mdx-js/react": "^3.1.1",
