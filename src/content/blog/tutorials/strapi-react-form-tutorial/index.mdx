@@ -1,0 +1,420 @@
+---
+title: "How to build a headless form with Strapi v5 and React"
+description: "Build a React contact form with Strapi v5 and FormFlow. Fetch a public schema, render your own inputs, validate submissions, and store the responses in Strapi."
+hero: "./hero.webp"
+heroAlt: "A Strapi form builder passing a JSON schema to a React contact form, illustrated on a dark navy and purple background."
+publishedAt: "2026-10-07"
+updatedAt: "2026-10-07"
+draft: false
+featured: false
+tags: ["strapi", "react", "forms", "typescript", "tutorial"]
+seo:
+  title: "Build a React contact form with Strapi v5"
+schema:
+  type: "HowTo"
+  steps:
+    - name: "Install FormFlow in Strapi v5"
+      text: "Install and enable the FormFlow plugin, then rebuild and start Strapi."
+    - name: "Create an active contact form"
+      text: "Add required name, email and message fields, enable the honeypot, and activate the form."
+    - name: "Connect the React application"
+      text: "Install the FormFlow SDK and configure the Strapi origin and CORS."
+    - name: "Fetch the public schema"
+      text: "Load the contact-form schema with loading, failure and cancellation handling."
+    - name: "Render the contact form"
+      text: "Connect your own inputs to the renderless React adapter with labels and field errors."
+    - name: "Verify validation and storage"
+      text: "Test client validation, submit a valid response, inspect the inbox, and send an invalid API request."
+---
+
+Build a **React contact form backed by Strapi v5**: create its fields in the
+Strapi admin, fetch the form schema, and render it with your own React
+components. Submissions go back to Strapi for validation and storage.
+
+We’ll use FormFlow, a Strapi plugin with a renderless React SDK. The plugin
+manages the form definition and submitted data; the SDK connects that schema to
+your inputs. You control the HTML and CSS. If FormFlow is new to you, the
+[product introduction](/blog/product-updates/introducing-formflow) explains how
+the pieces fit together.
+
+By the end, you’ll have a three-field contact form with loading and failure
+states, field errors, a spam honeypot, and a submission you can inspect in the
+Strapi admin.
+
+## Before you start
+
+You need:
+
+- A running Strapi v5 project with access to its admin panel.
+- A React 18+ application using TypeScript. The examples below use Vite and its
+  `import.meta.env` environment variables.
+- A terminal for installing packages and checking the public API.
+
+The example uses a single-page form with `text`, `email`, and `textarea` fields.
+Keep captcha disabled for this walkthrough; a captcha-enabled form also needs
+its widget and token wired into the frontend.
+
+## 1. Install FormFlow in Strapi v5
+
+Run this from your **Strapi project**, not the React application:
+
+```bash
+npm install @formflowjs/strapi-plugin-formflow
+```
+
+Add the plugin to `config/plugins.ts`, preserving any existing plugin settings:
+
+```ts
+export default {
+  formflow: {
+    enabled: true,
+  },
+};
+```
+
+Rebuild the admin and start Strapi:
+
+```bash
+npm run build
+npm run develop
+```
+
+The plugin defines its own form and submission content types. You don’t need to
+create a contact-form collection in Content-Type Builder.
+
+## 2. Create and activate a contact form
+
+Open **FormFlow** in the Strapi admin. Create a form titled **Contact** with the
+slug `contact-form`, then add these fields:
+
+| Label   | Field name | Type     | Required |
+| ------- | ---------- | -------- | :------: |
+| Name    | `name`     | text     | Yes      |
+| Email   | `email`    | email    | Yes      |
+| Message | `message`  | textarea | Yes      |
+
+Field names become the keys in the submitted JSON. Use the names above so the
+API checks later in this tutorial match your form.
+
+Keep the layout set to **Single page** (`single` in the API). In the spam
+settings, enable the honeypot and
+leave its field name as `_gotcha`. Set the submit-button text to **Send
+message** and a success message such as **Thanks! Your message has been
+received.** Turn on the **Active** switch and save. FormFlow publishes the
+form when you save it; there is no separate publish step in this workflow.
+
+Verify the public schema before writing React code:
+
+```bash
+curl -i http://localhost:1337/api/formflow/forms/contact-form
+```
+
+Expect HTTP `200` and a JSON response with this overall shape:
+
+```json
+{
+  "data": {
+    "title": "Contact",
+    "slug": "contact-form",
+    "fields": [],
+    "settings": {}
+  }
+}
+```
+
+Here, `fields` and `settings` are abbreviated; your response should contain the
+three fields and their public settings. The API omits private settings such as
+captcha secrets and notification configuration. The public routes
+require a published, active form. An inactive or missing form isn’t available.
+
+## 3. Connect your React application to Strapi
+
+Run this from the **React application**:
+
+```bash
+npm install @formflowjs/react @formflowjs/core
+```
+
+In its `.env.local` file, set the Strapi **origin**, without `/api/formflow`:
+
+```bash
+VITE_CMS_URL=http://localhost:1337
+```
+
+Restart Vite after changing environment variables. This URL is public frontend
+configuration; don’t put an admin token or other secret in a `VITE_` variable.
+The SDK adds `/api/formflow` itself and unwraps the API’s `{ "data": ... }`
+response.
+
+If React runs at `http://localhost:5173`, configure Strapi’s CORS middleware to
+allow that origin. In `config/middlewares.ts`, replace the existing
+`'strapi::cors'` entry with this object, keeping the rest of the middleware list
+and any origins your application already needs:
+
+```ts
+{
+  name: 'strapi::cors',
+  config: {
+    origin: ['http://localhost:5173', 'http://localhost:1337'],
+  },
+},
+```
+
+Restart Strapi after changing middleware configuration. Use your actual
+frontend origin if Vite starts on another port. See the
+[Strapi middleware documentation](https://docs.strapi.io/cms/configurations/middlewares#cors)
+for the full CORS options.
+
+## 4. Fetch the public form schema
+
+Create `src/ContactPage.tsx`. This component uses the `ContactForm` component
+we’ll create in the next step:
+
+```tsx
+import { useEffect, useState } from "react";
+import { createFormFlowClient, type FormSchema } from "@formflowjs/core";
+import { ContactForm } from "./ContactForm";
+
+const baseUrl = import.meta.env.VITE_CMS_URL;
+const client = createFormFlowClient({ baseUrl });
+
+export default function ContactPage() {
+  const [schema, setSchema] = useState<FormSchema | null>(null);
+  const [loadError, setLoadError] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    client.getForm("contact-form", { signal: controller.signal })
+      .then((form) => {
+        if (!controller.signal.aborted) setSchema(form);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setLoadError(true);
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  if (loadError) {
+    return <p role="alert">Could not load the contact form. Please reload the page.</p>;
+  }
+  if (!schema) return <p role="status">Loading form…</p>;
+
+  return <ContactForm schema={schema} baseUrl={baseUrl} />;
+}
+```
+
+The loading state ends in either a form or an error message. Cleanup cancels
+the request when the component unmounts, including React Strict Mode’s extra
+development setup/cleanup cycle.
+
+For Next.js or Astro, you can fetch the schema on the server and pass it into a
+client component or hydrated island. Replace the Vite environment expression
+with your framework’s configuration. In the Next.js App Router, put the React
+form in a file with a `"use client"` directive. The core client also accepts an
+injected `fetch` implementation.
+
+## 5. Render the form with your own React components
+
+Create `src/ContactForm.tsx`:
+
+```tsx
+import {
+  FormFlowField,
+  FormFlowHoneypot,
+  FormFlowProvider,
+  useFormFlow,
+  type FormSchema,
+} from "@formflowjs/react";
+
+function FormBody() {
+  const form = useFormFlow();
+
+  if (form.status === "success") {
+    return <p role="status">{form.result?.message || "Thanks! Your message was sent."}</p>;
+  }
+
+  return (
+    <form {...form.getFormProps()} className="contact-form">
+      <FormFlowHoneypot />
+
+      {form.fields.map((field) => (
+        <FormFlowField key={field.name} name={field.name}>
+          {(control) => (
+            <div className="field" data-invalid={control.invalid || undefined}>
+              <label {...control.getLabelProps()}>
+                {control.field.label}{control.field.required ? " (required)" : ""}
+              </label>
+
+              {control.field.type === "textarea" ? (
+                <textarea {...control.getTextareaProps()} rows={5} />
+              ) : (
+                <input {...control.getInputProps({
+                  type: control.field.type === "email" ? "email" : "text",
+                })} />
+              )}
+
+              {control.field.description && (
+                <p {...control.getDescriptionProps()}>
+                  {control.field.description}
+                </p>
+              )}
+
+              {control.invalid && (
+                <p {...control.getErrorProps()}>{control.error}</p>
+              )}
+            </div>
+          )}
+        </FormFlowField>
+      ))}
+
+      <button type="submit" disabled={form.isSubmitting}>
+        {form.isSubmitting ? "Submitting…" : form.schema.settings.submitButtonText}
+      </button>
+
+      {form.state.submitError && (
+        <p role="alert">
+          {form.state.submitError.code === "validation"
+            ? "Check the highlighted fields and submit again."
+            : "Your message could not be sent. Please try again."}
+        </p>
+      )}
+    </form>
+  );
+}
+
+export function ContactForm({ schema, baseUrl }: {
+  schema: FormSchema;
+  baseUrl: string;
+}) {
+  return (
+    <FormFlowProvider form={schema} baseUrl={baseUrl} options={{ validateOn: "blur" }}>
+      <FormBody />
+    </FormFlowProvider>
+  );
+}
+```
+
+Mount the page from `src/App.tsx`, or from the route where your contact form
+belongs:
+
+```tsx
+import ContactPage from "./ContactPage";
+
+export default function App() {
+  return <ContactPage />;
+}
+```
+
+`FormFlowProvider` owns the form store. `useFormFlow()` exposes its state and
+currently visible value fields. `FormFlowField` binds a field by name; its prop
+getters connect values, changes, blur events, labels, descriptions and error
+IDs. We explicitly set the input type to `email` for the email field.
+
+`getFormProps()` disables native browser validation so SDK errors appear
+consistently. The SDK validates on blur and checks the entire form again before
+submission. Field errors use `role="alert"` and are referenced by the input’s
+`aria-describedby` attribute.
+
+`FormFlowHoneypot` renders the configured hidden bait field and includes its
+value in the request. It renders nothing if the form’s honeypot setting is off.
+Leave it empty during normal use.
+
+The adapter ships no CSS. Add your own styles to `.contact-form` and `.field`,
+and use the control’s `data-invalid`, `data-touched`, and `data-dirty` attributes
+for visual states. If you use design-system components, forward the generated
+props to the native input and preserve their event handlers and ARIA attributes.
+
+## 6. Verify client validation, server validation and storage
+
+Start your React application:
+
+```bash
+npm run dev
+```
+
+Open the page and try these checks:
+
+1. Blur the empty email field. A required-field message should appear.
+2. Enter an invalid email and submit. The SDK should display a field error and
+   send no request to `/submit`.
+3. Fill all three fields with valid values and submit. You should see the
+   configured success message.
+4. Open the form’s submissions view in Strapi. Confirm that the saved entry
+   contains `name`, `email`, and `message`.
+
+Use your browser’s Network panel to inspect the successful request:
+
+```http
+POST /api/formflow/forms/contact-form/submit
+Content-Type: application/json
+```
+
+Its body is a **flat object**, not a Strapi Content API `{ "data": ... }`
+envelope:
+
+```json
+{
+  "name": "Ada Lovelace",
+  "email": "ada@example.com",
+  "message": "I would like to discuss a project.",
+  "_gotcha": ""
+}
+```
+
+To test the server independently of React, send an invalid email directly:
+
+```bash
+curl -i -X POST http://localhost:1337/api/formflow/forms/contact-form/submit \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Ada Lovelace","email":"not-an-email","message":"Hello","_gotcha":""}'
+```
+
+Expect HTTP `400` with a validation error containing an `email` field error.
+This request bypasses the SDK, so it checks the server’s validation path. The
+plugin validates against the current stored form definition before creating a
+submission; client validation is feedback, not the acceptance boundary.
+
+If a honeypot is filled, the server deliberately returns a success-shaped
+response without saving the submission. That is why checking the inbox matters
+when confirming normal delivery.
+
+## Troubleshooting
+
+| Symptom | What to check |
+| ------- | ------------- |
+| Schema request fails | Confirm Strapi is running, the form is active, and the slug is exactly `contact-form`. |
+| `curl` works but the browser fails | Check the browser’s CORS error and allow the actual frontend origin in Strapi. |
+| Request goes to the React server or repeats `/api/formflow` | Check `VITE_CMS_URL`, use only the Strapi origin, and restart Vite. |
+| API returns `400` | Inspect the field errors and confirm the names and types match the stored schema. |
+| API returns `429` | You hit the configured submission rate limit; wait before retrying. |
+| Success response but no entry | Confirm `_gotcha` stayed empty. A filled honeypot is deliberately not stored. |
+
+## Adding more field types
+
+This renderer supports the three field types used here. Adding a select, file,
+or other field to Strapi also requires rendering it correctly in React:
+
+- Use `getSelectProps()` and render the schema’s options for a select.
+- Use `getCheckboxProps()` or `getRadioProps()` for choices.
+- Use `getFileProps()` for uploads; the SDK switches to multipart submission
+  when it has file values.
+- Render headings, paragraphs and dividers separately. `form.fields` excludes
+  layout fields.
+- Use `FormFlowStep` and the step APIs for a multi-step form.
+- Render your captcha widget and call `setCaptchaToken(provider, token)` with
+  the selected provider and its token.
+
+For a broader renderer, explore the
+[React Vite example](https://github.com/Digidinc/formflow-sdk/tree/main/examples/react-vite).
+
+## Next steps
+
+You now have a schema-driven React contact form whose responses stay in Strapi.
+Use your application’s existing components and styles, then test again whenever
+you add a new field type or change submission settings.
+
+- [Inspect the React SDK](https://github.com/Digidinc/formflow-sdk/tree/main/packages/react)
+- [Read the plugin source and configuration guide](https://github.com/Digidinc/strapi-plugin-formflow)
+- [Send Telegram notifications for submissions](/blog/tutorials/telegram-notifications-for-strapi-form-submissions)
