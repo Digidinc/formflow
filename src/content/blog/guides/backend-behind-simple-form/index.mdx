@@ -1,0 +1,228 @@
+---
+title: "The backend hiding behind a simple website form"
+description: "A website form needs validation, spam protection, storage and review. See how a Strapi form backend separates editor control from your frontend and data flows."
+hero: "./hero.webp"
+heroAlt: "A contact form connected to a backend hub, with validation, database, inbox and notification icons on a dark navy and purple background."
+publishedAt: "2026-10-11"
+updatedAt: "2026-10-11"
+draft: false
+featured: false
+tags: ["forms", "strapi", "self-hosted", "architecture", "data"]
+seo:
+  title: "The backend behind a simple website form"
+---
+
+A website contact form can start with three inputs and a POST request. Operating
+it introduces more decisions: who changes the questions, what the server
+accepts, where submissions are stored, and how someone follows up on them.
+
+Those decisions define the **form backend**. They matter whether you build the
+endpoint yourself, use a hosted form service, or manage forms inside a CMS.
+
+This guide uses FormFlow, a headless form builder for **Strapi v5**, to make those
+responsibilities concrete. The point is to understand the work behind the form
+before choosing where it belongs.
+
+## A form becomes a workflow after launch
+
+Consider a contact form with **Name**, **Email**, and **Message**. The next
+request might be a department selector, a required attachment, or a notification
+to a different team.
+
+Each change reaches beyond the HTML:
+
+| Change | Backend decision |
+| --- | --- |
+| Add or rename a question | Who owns the schema, and which clients can render the field? |
+| Make a field required | What happens when an older frontend submits without it? |
+| Show a field conditionally | Does the server accept values for a field that should be hidden? |
+| Accept an attachment | Which file types and sizes are allowed, and where is the file stored? |
+| Notify another team | Which values leave the database, and what happens if delivery fails? |
+| Export or delete responses | Who has permission, and which records or fields are included? |
+
+A hard-coded form can handle these requirements. The question is whether you
+want to maintain those operations alongside the frontend or give them a
+separate home.
+
+## Separate schema ownership from frontend rendering
+
+FormFlow stores form definitions in Strapi. People with the appropriate admin
+permissions can edit fields, labels, validation rules, settings, and activation.
+The public frontend fetches a sanitized schema by slug:
+
+```http
+GET /api/formflow/forms/contact-form
+```
+
+The response contains public field definitions and rendering settings. It
+omits private notification configuration and captcha secret keys. Public access
+requires a published, active form.
+
+Your frontend decides how to turn that schema into labels, inputs, errors, and
+buttons. A label change can appear on the next schema fetch without a frontend
+release. A server-rendered or cached page still needs its usual refresh or
+revalidation strategy.
+
+Adding a field type is a different change. If your renderer only supports text,
+email, and textarea inputs, adding a file field in Strapi does not make the
+frontend understand uploads. The renderer must support that type first.
+
+That gives each team a clear responsibility: editors manage the questions and
+available settings; developers maintain the renderer and its supported field
+contracts.
+
+## Let the server decide what can be saved
+
+Client validation gives people useful feedback before they submit. It does not
+replace the backend's acceptance rules.
+
+A final FormFlow submission uses:
+
+```http
+POST /api/formflow/forms/contact-form/submit
+```
+
+For forms without file values, the body is a flat JSON object keyed by field
+name. File uploads use multipart form data. The server loads the current
+published form instead of trusting a schema supplied by the browser.
+
+The final submission path does the following:
+
+1. Checks that the form is available and applies its configured rate-limit and
+   spam checks.
+2. Recalculates conditional visibility from the submitted values and stored
+   rules. Hidden field values are excluded from the saved data.
+3. Validates visible fields, including required values and type-specific rules.
+4. Checks file requirements, configured size limits, and allowed types before
+   uploading accepted files through Strapi's upload service.
+5. Sanitizes accepted field values and creates the submission record.
+6. Starts configured notification and integration work after the record exists.
+
+For example, if **Company name** should only appear when **Contact type** is
+**Business**, posting a company name while selecting **Personal** does not make
+that hidden value part of the final stored submission. If a currently visible
+required field is missing, the server rejects the submission with a field error.
+
+FormFlow returns HTTP `400` for validation errors, with errors keyed by field
+name. Its SDK maps those server errors back into form state so the renderer can
+show them beside the relevant input.
+
+This also explains stale-client failures: making a new field required can cause
+an older frontend to fail submission until it fetches and renders the updated
+schema. A schema change still needs a compatibility check.
+
+## Plan for spam, files, and delivery failures
+
+A public endpoint needs controls beyond the submit button. FormFlow supports a
+hidden honeypot field and a configurable per-form, per-IP rate limit. Its spam
+settings also support captcha providers; enabling a captcha means wiring the
+selected widget and token into the frontend.
+
+A filled honeypot deliberately receives a success-shaped response without a
+saved submission. The submission inbox, rather than the success message alone,
+is the useful check when testing normal delivery.
+
+Files need their own data-path decision. FormFlow validates configured upload
+rules, then delegates accepted files to Strapi. Their storage location depends
+on your [Strapi upload provider](https://docs.strapi.io/cms/configurations/media-library-providers),
+which may use local storage or an external service. File-type and size checks
+are not a claim of malware scanning.
+
+Notifications have a different failure boundary. FormFlow stores the accepted
+submission before starting its post-submission hooks. Email delivery can fail
+after the entry has been saved; a successful form response does not establish
+that an email reached someone's inbox.
+
+Configure and test the email provider separately. If people rely on notifications
+to follow up, keep a way to review saved submissions and monitor delivery
+failures. This article does not promise guaranteed delivery or automatic retries
+for every notification channel.
+
+## Decide where submission data can travel
+
+With FormFlow, accepted submission records are stored in your Strapi database
+and reviewed in the plugin's submissions interface. That puts form operations
+alongside the rest of the CMS.
+
+It does not mean every configured data flow stays on that server:
+
+- Email notifications send the configured submission content through your email
+  provider and to recipients.
+- Enabled webhooks and integrations can forward submission data to other systems.
+- Files go to the storage provider configured for Strapi.
+- Exporting creates another copy that needs an owner and an appropriate destination.
+
+FormFlow also has opt-out anonymous usage telemetry. Its telemetry reports
+installation and feature-use facts, not submitted values, field labels, or email
+addresses. The [plugin README](https://github.com/Digidinc/strapi-plugin-formflow#telemetry)
+explains the opt-out setting.
+
+Choose those destinations deliberately. Self-hosting gives you control over the
+configuration; your team still needs to maintain access permissions, backups,
+deletion processes, and the surrounding infrastructure.
+
+## Give the inbox and exports an owner
+
+Saving a submission is the start of follow-up. FormFlow provides submission
+detail views, statuses, bulk actions, deletion, and CSV/JSON export. Plugin admin
+actions use Strapi's role-based permission checks for reading, updating,
+deleting, and exporting submissions.
+
+Decide who can change the form, who can read responses, and who can export or
+delete them. Those permissions serve different jobs. Review them when you add a
+new team or start collecting a new category of information.
+
+Use CSV or JSON export when the team needs a portable copy of responses.
+Automated retention, approvals, and advanced export formats are separate
+capabilities, so check the relevant feature availability before designing an
+operational process around them.
+
+## Keep the frontend part of the contract
+
+You can consume FormFlow's REST API directly or use its React and Vue SDKs. The
+SDK core supplies schema fetching, form state, validation, conditional visibility,
+file serialization, and step handling. The framework adapters supply input
+bindings and accessibility attributes for labels, descriptions, and errors.
+
+They ship no component theme or CSS bundle. You provide the markup and styles,
+and implement the field types your application needs. An existing design system
+can remain the place where those controls are built.
+
+For a concrete implementation, follow the
+[Strapi v5 and React contact-form tutorial](/blog/tutorials/strapi-react-form-tutorial).
+It shows schema loading, field bindings, submission failures, and checks for
+both client and server validation.
+
+## Understand the core and advanced workflow boundary
+
+FormFlow is open-core. The MIT-licensed core includes unlimited forms and
+submissions, standard and layout fields, file uploads, validation, submission
+management, CSV/JSON export, basic spam controls, basic admin email notifications,
+and the public REST API. The React and Vue SDKs are MIT-licensed too.
+
+Advanced capabilities use separately licensed code under the plugin's
+`server/src/ee/` and `admin/src/ee/` directories. Examples include configuring
+conditional rules and multi-step forms, outgoing webhooks and integrations,
+approvals, automated retention, and advanced export formats. They are not all
+included in the free core.
+
+The standard submission path remains available without a license key. There is
+no built-in free-core form or submission quota; the database, storage, and
+hosting still have their own capacity limits.
+
+## Choose the smallest architecture your team can operate
+
+| Approach | A useful fit when… | Work to account for |
+| --- | --- | --- |
+| Hard-coded form and endpoint | The questions are stable and developers own changes. | Validation, storage, spam handling and follow-up still need implementation. |
+| Hosted form service or widget | You want a provider to operate the submission backend. | Check its rendering constraints, data destinations, exports and service limits. |
+| Headless form backend in Strapi | Editors need schema control, the frontend owns rendering, and the team already operates Strapi. | Maintain the renderer, server configuration, permissions and downstream providers. |
+
+Before launching, identify who owns the schema, server validation, file storage,
+submission review, notifications, and deletion. A small form is easier to
+maintain when those responsibilities are explicit.
+
+If you want to try this architecture, start with the
+[React tutorial](/blog/tutorials/strapi-react-form-tutorial), then inspect the
+[plugin source](https://github.com/Digidinc/strapi-plugin-formflow) and
+[SDK repository](https://github.com/Digidinc/formflow-sdk).
