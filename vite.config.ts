@@ -1,4 +1,5 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
+import { SITE_ORIGIN } from './src/config/site';
 import react from '@vitejs/plugin-react';
 import mdx from '@mdx-js/rollup';
 import remarkGfm from 'remark-gfm';
@@ -15,6 +16,43 @@ import type { Literal, Property } from 'estree-jsx';
 import type { Root } from 'mdast';
 import type { MdxjsEsm } from 'mdast-util-mdxjs-esm';
 import type { VFile } from 'vfile';
+
+// Build-only loaders, with a runtime guard so local previews and forks do not
+// contribute visits to the production GA4 or Clarity properties.
+function productionAnalyticsPlugin(): Plugin {
+  return {
+    name: 'formflow-production-analytics',
+    apply: 'build',
+    transformIndexHtml() {
+      return [{
+        tag: 'script',
+        attrs: { 'data-formflow-analytics': '' },
+        injectTo: 'head',
+        children: `
+(function () {
+  if (window.location.origin !== ${JSON.stringify(SITE_ORIGIN)}) return;
+
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+  window.gtag('js', new Date());
+  window.gtag('config', 'G-RM7RBNGC08');
+  var googleTag = document.createElement('script');
+  googleTag.async = true;
+  googleTag.src = 'https://www.googletagmanager.com/gtag/js?id=G-RM7RBNGC08';
+  document.head.appendChild(googleTag);
+
+  window.clarity = window.clarity || function () {
+    (window.clarity.q = window.clarity.q || []).push(arguments);
+  };
+  var clarityTag = document.createElement('script');
+  clarityTag.async = true;
+  clarityTag.src = 'https://www.clarity.ms/tag/y957taa31z';
+  document.head.appendChild(clarityTag);
+})();`,
+      }];
+    },
+  };
+}
 
 // Computes reading time from the MDX body and exposes it as a named ESM export
 // (`readingTime`) on the compiled module — reliable, unlike reading a `.mdx?raw`
@@ -84,9 +122,10 @@ function prop(name: string, value: Literal): Property {
 // resolve assets and the react-router basename correctly. The production site
 // lives at the root of formflow.digid.ca; forks deployed under a GitHub Pages
 // project path can override this with PAGES_BASE_PATH=/repo-name/.
-export default defineConfig(() => ({
+export default defineConfig(({ mode }) => ({
   base: process.env.PAGES_BASE_PATH || '/',
   plugins: [
+    mode === 'production' && productionAnalyticsPlugin(),
     // MDX must run BEFORE @vitejs/plugin-react so the React plugin sees JSX.
     {
       enforce: 'pre' as const,

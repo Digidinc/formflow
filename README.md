@@ -13,6 +13,11 @@ npm install
 npm run dev
 ```
 
+Google Analytics and Microsoft Clarity are excluded from the development server.
+Production builds load them only when served from `SITE_ORIGIN`
+(`https://formflow.digid.ca`), so local `npm run preview` visits are excluded too.
+Run `npm run test:analytics` after building to verify both providers' guards.
+
 ## Production build
 
 ```bash
