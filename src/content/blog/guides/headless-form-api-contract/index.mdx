@@ -1,0 +1,350 @@
+---
+title: "Headless form builder API: the contract behind FormFlow"
+description: "See how a headless form builder API works in Strapi v5: public schemas, JSON and multipart submissions, server validation, and React/Vue SDK error handling."
+hero: "./hero.webp"
+heroAlt: "A Strapi schema passing through an API contract to a custom form, with GET and POST paths, React and Vue badges, and a validation shield."
+publishedAt: "2026-10-14"
+updatedAt: "2026-10-14"
+draft: false
+featured: false
+tags: ["forms", "api-design", "strapi", "typescript", "headless"]
+seo:
+  title: "Headless form builder API: schema and submissions"
+---
+
+A **headless form builder API** connects a form definition to a frontend that
+owns its markup. The useful contract includes the public schema, submission
+payloads, validation errors, and the behavior of draft and final submissions.
+
+FormFlow applies that boundary to Strapi v5. Editors manage the form in Strapi;
+the frontend fetches its schema, renders supported fields, and sends values back
+for server validation. The React and Vue SDKs help bind that contract to your
+components.
+
+This guide explains what crosses the API boundary and what remains a server or
+frontend responsibility. For a complete working setup, start with the
+[Strapi v5 and React contact-form tutorial](/blog/tutorials/strapi-react-form-tutorial).
+For the operational decisions around storage and notifications, read
+[the backend behind a website form](/blog/guides/backend-behind-simple-form).
+
+## Publish a public form schema, not a database document
+
+A stored Strapi form contains editor settings and private workflow configuration.
+A public renderer needs a smaller view:
+
+- Title, description, and slug
+- Field IDs, submission names, types, and order values
+- Labels, options, descriptions, placeholders, and defaults
+- Required flags, validation rules, and conditional visibility rules
+- Public layout, step, and spam settings
+
+FormFlow returns that projection from:
+
+```http
+GET /api/formflow/forms/contact-form
+```
+
+The response wraps the schema in `{ "data": ... }`. For example, the following
+**excerpt** shows the public identity and validation shape of one email field;
+the complete response also includes the other fields and rendering settings:
+
+```json
+{
+  "data": {
+    "title": "Contact",
+    "slug": "contact-form",
+    "fields": [
+      {
+        "id": "a83e3b01-ef7b-4d62-8058-93a6a82d9e45",
+        "type": "email",
+        "name": "email",
+        "label": "Email",
+        "required": true,
+        "order": 1,
+        "validation": []
+      }
+    ]
+  }
+}
+```
+
+The ID above is illustrative; FormFlow generates IDs when creating fields.
+Notification recipients, webhook configuration, integration credentials, and
+captcha secret keys are not part of the public projection. Enabled reCAPTCHA
+settings expose its public site key and version, not the secret key.
+
+This is a curated response, not a direct serialization of the stored form.
+Public access also requires a published, active form.
+
+## Treat field IDs and submission names as different contracts
+
+A field's `id` identifies it inside the form definition. Step configuration can
+reference those IDs. Its `name` is the key a frontend uses when submitting a
+value and when displaying a field error.
+
+For the email field above, submit `email`, not its UUID and not its label.
+Changing **Email** to **Work email** can preserve the payload contract if `name`
+stays `email`.
+
+Renaming `email` to `work_email` is a different change. Clients, field bindings,
+and integrations that use the old name need updating. A stable ID does not make
+a renamed submission key backward compatible.
+
+Labels and rules are read when a client fetches the schema. Cached pages still
+need refresh or revalidation, and adding a new field type requires the renderer
+to support it. A schema-driven frontend needs its own compatibility strategy.
+
+## Submit flat JSON values to the form endpoint
+
+When no visible file field holds an uploaded file, the SDK sends JSON to:
+
+```http
+POST /api/formflow/forms/contact-form/submit
+Content-Type: application/json
+```
+
+The body is a flat object keyed by the configured field names:
+
+```json
+{
+  "name": "Ada Lovelace",
+  "email": "ada@example.com",
+  "message": "Hello",
+  "_gotcha": ""
+}
+```
+
+`_gotcha` is the default honeypot name and is included when the form's honeypot
+is enabled. Use the form's configured name if it was changed. The server removes
+that control field before storing a legitimate submission.
+
+The `{ "data": ... }` response wrapper is **not** a request wrapper. Wrapping
+these values in `data` would not match the form's expected field keys.
+
+You can consume the REST API directly or use the framework-agnostic client:
+
+```ts
+import { createFormFlowClient } from "@formflowjs/core";
+
+const client = createFormFlowClient({
+  baseUrl: "https://cms.example.com",
+});
+
+export async function submitContact(values: {
+  name: string;
+  email: string;
+  message: string;
+}) {
+  const schema = await client.getForm("contact-form");
+
+  return client.submit("contact-form", { schema, values });
+}
+```
+
+Replace the example origin with your Strapi origin. The default API prefix is
+`/api/formflow`; a customized REST prefix requires the matching client
+`apiPrefix` option. The client unwraps successful responses and throws typed
+errors for unsuccessful requests.
+
+The schema passed to `client.submit()` drives serialization and field
+visibility filtering. This low-level client call does not run the form store's
+client-side validation before posting. The server still validates the stored
+form definition. Use the form store or framework adapter when you also want
+local validation and reactive submission state.
+
+## Keep the same field names when switching to multipart
+
+A visible file field holding a real `File` value makes the SDK use
+`multipart/form-data`. File parts use field names; checkbox arrays use repeated
+keys; ordinary values become text parts.
+
+For a form with an `attachment` file field, a direct request might look like:
+
+```bash
+curl -X POST http://localhost:1337/api/formflow/forms/contact-form/submit \
+  -F 'name=Ada Lovelace' \
+  -F 'email=ada@example.com' \
+  -F 'message=Please review the attachment' \
+  -F '_gotcha=' \
+  -F 'attachment=@./example.pdf'
+```
+
+This example assumes `attachment` exists in the form schema and allows that
+file. Let `curl`, the browser, or the SDK set the multipart boundary rather than
+manually assigning a bare `Content-Type` header.
+
+Strapi parses text fields into `ctx.request.body` and uploads into
+`ctx.request.files`. FormFlow passes both to its submission service and checks
+file-specific constraints separately from ordinary values. A valid file-only
+form can submit without text fields in its body.
+
+Accepted files go through Strapi's upload service. The upload provider determines
+where they are stored. The transport changes; the relationship between field
+names and values stays the same.
+
+## Recalculate conditional visibility on the server
+
+Hiding a field in React or Vue does not establish what a handcrafted request
+can send.
+
+Suppose `company_name` is visible only when `customer_type` equals `business`.
+The server evaluates that condition against the submitted values and the
+current stored form. Final validation and storage use the visible fields.
+Hidden values are excluded from the saved data and the normal post-submission
+notification payload.
+
+The SDK applies its own visibility calculation while rendering and serializing
+values. The server repeats the decision independently; it does not trust a
+client's list of visible fields or its copy of the schema.
+
+Required values, email formats, choices, and configured file constraints are
+checked on the server before a final submission is stored. A stale client can
+therefore fail after a schema change, such as adding a required field. Client
+and server validation improve different parts of the workflow; the server is
+the acceptance authority.
+
+## Make draft, step, and final behavior explicit
+
+These requests represent different states:
+
+| Operation | Request and result |
+| --- | --- |
+| Final submission | `POST /forms/:slug/submit` without `_step`. Validates the current form and stores accepted visible values. |
+| Step validation | `POST /forms/:slug/submit` with `_step`. Resolves a configured step and checks its fields without creating a submission. |
+| Save a partial response | `POST /forms/:slug/partial`. Sanitizes partial values into a draft and returns a resume token. |
+| Load a partial response | `GET /forms/:slug/partial/:resumeToken`. Returns the matching stored partial response. |
+
+The paths in this table are relative to `/api/formflow`. Step validation
+requires a multi-step form with defined steps. The SDK exposes `validateStep()`
+for that request, while its store can manage step navigation and validation.
+
+A partial response is deliberately incomplete: save-and-resume does not enforce
+all final required-field rules, upload files, or trigger the final submission
+hooks. It can retain hidden values because a later answer may reveal those
+fields again. The final request validates again and excludes currently hidden
+values.
+
+Save-and-resume is an entitled feature, not part of the ordinary free submission
+path. The API returns HTTP `402` when the license does not permit it. The SDK's
+`savePartial()` and `loadPartial()` methods do not grant an entitlement.
+
+After loading a partial response, the current SDK submits the restored values
+through the ordinary final-submission path, which creates a new record. That
+path does not automatically promote or delete the original draft. Resume tokens
+allow access to a stored partial response; handle them as credentials in your
+application.
+
+## Return field errors that a renderer can use
+
+An invalid email can produce this HTTP `400` response:
+
+```json
+{
+  "error": {
+    "status": 400,
+    "name": "ValidationError",
+    "message": "Validation failed",
+    "details": {
+      "errors": {
+        "email": ["Invalid email address"]
+      }
+    }
+  }
+}
+```
+
+`@formflowjs/core` converts this into a `FormFlowError` with
+`code: "validation"` and `fieldErrors.email`. The store merges server field
+errors into its error state so React and Vue can display them through the same
+bindings used for local errors.
+
+The client also distinguishes failures beyond field validation:
+
+| Failure | SDK error code |
+| --- | --- |
+| Validation response | `validation` |
+| Other HTTP 400 request failure | `bad_request` |
+| HTTP 400 failure whose message identifies a captcha provider | `captcha` |
+| Unavailable entitlement, HTTP 402 | `payment_required` |
+| Forbidden request, HTTP 403 | `forbidden` |
+| Missing resource, HTTP 404 | `not_found` |
+| Oversized payload, HTTP 413 | `payload_too_large` |
+| Rate limit, HTTP 429 | `rate_limited` |
+| Server failure, HTTP 5xx | `server` |
+| Fetch/network failure | `network` |
+| Aborted request | `aborted` |
+| Unmapped response | `unknown` |
+
+The actual response status determines the mapping. An unavailable form can be
+rejected by the active/published route policy; do not assume every such request
+reaches the controller's HTTP `404` response.
+
+For a rate limit, the SDK can expose a numeric `Retry-After` value as
+`retryAfter`, in seconds. Use that when explaining when a retry is appropriate.
+
+A successful final response contains the configured message and optional
+redirect URL inside `{ "data": ... }`. The honeypot middleware intentionally
+returns the same success shape when it discards spam. Test normal persistence
+by checking the submissions inbox, not just the success response.
+
+## Keep React and Vue bindings renderless
+
+The shared core owns schema types, visibility logic, serialization, API errors,
+validation, and the form store. React subscribes through
+`useSyncExternalStore`; Vue exposes reactive state through refs and computed
+values.
+
+For example, inside a React `FormFlowProvider`, a field binding can use your own
+markup:
+
+```tsx
+import { FormFlowField } from "@formflowjs/react";
+
+export function EmailField() {
+  return (
+    <FormFlowField name="email">
+      {(field) => (
+        <div>
+          <label {...field.getLabelProps()}>{field.field.label}</label>
+          <input {...field.getInputProps({ type: "email" })} />
+          {field.field.description && (
+            <p {...field.getDescriptionProps()}>{field.field.description}</p>
+          )}
+          {field.invalid && <p {...field.getErrorProps()}>{field.error}</p>}
+        </div>
+      )}
+    </FormFlowField>
+  );
+}
+```
+
+The provider's schema must contain an `email` field. The getters connect its
+value, events, label, description, and error IDs. Explicitly supplying
+`type: "email"` gives the native input the appropriate type; the getter does
+not infer it from the schema.
+
+The adapters ship no component theme or CSS bundle. Your application still
+needs to map each supported field type to an appropriate control and preserve
+the props that reach the native element. A renderless SDK keeps styling under
+your control; it does not make an arbitrary custom widget compatible by itself.
+
+## Keep the API contract reviewable as the form evolves
+
+Before changing a public form, check these boundaries:
+
+1. Public projection: are private settings still excluded?
+2. Field identity: did a payload key change, or only its label?
+3. Transport: do JSON and multipart use the same field names?
+4. Visibility and validation: what will a stale or modified client send?
+5. Submission state: is this a draft, a step check, or a final response?
+6. Errors: can the frontend present the failure without guessing from text?
+7. Rendering: can every consuming client render the configured field types?
+
+Those checks make changes to a Strapi form builder easier to assess across its
+frontend clients. They do not guarantee compatibility automatically; schema
+changes and renderer updates still need testing together.
+
+- [Build a working React contact form](/blog/tutorials/strapi-react-form-tutorial)
+- [Review the form backend's operational responsibilities](/blog/guides/backend-behind-simple-form)
+- [Inspect the FormFlow plugin source](https://github.com/Digidinc/strapi-plugin-formflow)
+- [Inspect the core, React, and Vue SDKs](https://github.com/Digidinc/formflow-sdk)
